@@ -35,6 +35,11 @@ export function generateComment(params) {
   return request.post('/ai/comment', null, { params })
 }
 
+/** AI 学科答疑（本地大模型，学生/家长/教师通用） */
+export function aiTutor(question, subject = '', stage = '') {
+  return request.post('/ai/tutor', null, { params: { question, subject, stage } })
+}
+
 /** ⑤ 家长沟通通知文案（可选发送） */
 export function generateParentNotice(warningId, send = false) {
   return request.post(`/ai/parent-notice/${warningId}`, null, { params: { send } })

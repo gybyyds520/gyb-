@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.gyb.xqfx.annotation.RequireRole;
 import com.gyb.xqfx.client.OllamaClient;
+import com.gyb.xqfx.common.BusinessException;
+import com.gyb.xqfx.common.ErrorCode;
 import com.gyb.xqfx.common.Result;
 import com.gyb.xqfx.entity.AiCallLog;
 import com.gyb.xqfx.entity.AiPromptTemplate;
@@ -87,6 +89,47 @@ public class AiController {
                                                      @RequestParam(required = false) Long userId) {
         dataScopeService.requireStudentAccess(studentId);
         return Result.success(aiAnalysisService.generateAdvice(studentId, termId, userId));
+    }
+
+    @Operation(summary = "AI 学科答疑（本地大模型，学生/家长/教师通用）")
+    @PostMapping("/tutor")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER", "STUDENT", "PARENT"})
+    public Result<Map<String, Object>> tutor(@RequestParam String question,
+                                             @RequestParam(required = false) String subject,
+                                             @RequestParam(required = false) String stage) {
+        if (question == null || question.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请输入要解答的问题");
+        }
+        if (!ollamaClient.isAvailable()) {
+            throw new BusinessException(ErrorCode.AI_SERVICE_ERROR, "本地大模型不可用，请先启动 Ollama");
+        }
+        String stageText = stage == null || stage.isBlank() ? "通用" : stage;
+        String subjectText = subject == null || subject.isBlank() ? "通用学科" : subject;
+        String systemPrompt = "你是一位耐心的" + stageText + "「" + subjectText + "」学科辅导老师。"
+                + "请用清晰、逐步的讲解帮助学生理解题目，给出解题思路、关键步骤与答案；"
+                + "对于不会做的难题，先引导思考方向再给详细解答；回答控制在 400 字以内，语言简洁易懂。";
+        OllamaClient.ChatResult res = ollamaClient.chat(systemPrompt, question.trim());
+        Map<String, Object> data = new HashMap<>();
+        data.put("content", res.content);
+        data.put("model", res.model);
+        data.put("subject", subjectText);
+        // 记录调用日志（供管理端 AI 日志查看；问题内容记入 errorMsg 便于溯源）
+        try {
+            AiCallLog log = new AiCallLog();
+            log.setBizType("TUTOR");
+            log.setModelName(res.model);
+            log.setPromptTokens(res.promptTokens);
+            log.setCompletionTokens(res.completionTokens);
+            log.setTotalTokens(res.totalTokens());
+            log.setStatus("SUCCESS");
+            log.setUserId(SecurityUtils.currentUserIdOrNull());
+            log.setErrorMsg(question.length() > 200 ? question.substring(0, 200) : question);
+            log.setCreateTime(LocalDateTime.now());
+            callLogMapper.insert(log);
+        } catch (Exception ignored) {
+            // 日志写入失败不影响答疑
+        }
+        return Result.success(data);
     }
 
     @Operation(summary = "① 预警工作周报（AI 聚合解读）")

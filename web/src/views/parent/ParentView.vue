@@ -147,6 +147,41 @@
       />
     </el-card>
 
+    <!-- 子女作业动态（作业帮式作业闭环家校联动） -->
+    <el-card v-if="children.length" shadow="never" style="margin-top: 16px">
+      <template #header>
+        <div class="card-header">
+          <span>子女作业动态</span>
+          <el-button size="small" :loading="homeworkLoading" @click="loadParentHomework">刷新</el-button>
+        </div>
+      </template>
+      <el-empty v-if="!homeworkList.length" description="暂未布置作业：教师布置后子女完成情况会显示在这里" :image-size="60" />
+      <el-table v-else :data="homeworkList" border stripe size="small">
+        <el-table-column prop="studentName" label="子女" width="110" />
+        <el-table-column prop="title" label="作业" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="courseName" label="课程" min-width="90" />
+        <el-table-column label="题数" width="70">
+          <template #default="{ row }">{{ row.questionCount }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.submitted" size="small" type="success">已提交</el-tag>
+            <el-tag v-else-if="row.overdue" size="small" type="danger">已逾期</el-tag>
+            <el-tag v-else size="small" type="warning">待完成</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="得分" width="90">
+          <template #default="{ row }">
+            <span v-if="row.score !== null && row.score !== undefined">{{ row.score }}</span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="截止时间" width="150">
+          <template #default="{ row }">{{ formatTime(row.deadline) }}</template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
     <el-dialog v-model="feedbackDialog" title="家长回执" width="460px">
       <el-form label-width="80px">
         <el-form-item label="回执">
@@ -173,6 +208,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { myChildren, childDetail, parentFeedback } from '@/api/portal'
+import { parentHomework } from '@/api/homework'
 import { childAiReport } from '@/api/vip'
 import { listBase } from '@/api/base'
 
@@ -186,6 +222,9 @@ const currentStudentId = ref(null)
 
 const aiReport = ref(null)
 const aiLoading = ref(false)
+
+const homeworkList = ref([])
+const homeworkLoading = ref(false)
 
 const feedbackDialog = ref(false)
 const submitting = ref(false)
@@ -267,12 +306,24 @@ async function submitFeedback() {
   }
 }
 
+async function loadParentHomework() {
+  homeworkLoading.value = true
+  try {
+    homeworkList.value = await parentHomework()
+  } catch (e) {
+    ElMessage.warning(e.message || '作业动态加载失败')
+  } finally {
+    homeworkLoading.value = false
+  }
+}
+
 onMounted(async () => {
   children.value = await myChildren(null)
   terms.value = await listBase('term')
   if (children.value.length === 1) {
     await selectChild(children.value[0])
   }
+  loadParentHomework()
 })
 </script>
 

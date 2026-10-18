@@ -157,7 +157,168 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 我的作业（作业帮式作业闭环：教师布置→作答→自动批改） -->
+    <el-card shadow="never" style="margin-top: 16px">
+      <template #header>
+        <div class="card-header">
+          <span>我的作业</span>
+          <el-button size="small" :loading="homeworkLoading" @click="loadHomework">刷新</el-button>
+        </div>
+      </template>
+      <el-empty v-if="!homeworkList.length" description="暂无作业：教师布置作业后会显示在这里" :image-size="60" />
+      <el-table v-else :data="homeworkList" border stripe size="small">
+        <el-table-column prop="title" label="作业" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="courseName" label="课程" min-width="90" />
+        <el-table-column prop="questionCount" label="题数" width="70" />
+        <el-table-column label="截止时间" width="150">
+          <template #default="{ row }">{{ formatTime(row.deadline) }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">
+            <el-tag v-if="row.submitted" size="small" type="success">已交</el-tag>
+            <el-tag v-else-if="row.overdue" size="small" type="danger">已逾期</el-tag>
+            <el-tag v-else size="small" type="warning">待作答</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="得分" width="90">
+          <template #default="{ row }">
+            <span v-if="row.score !== null && row.score !== undefined">{{ row.score }}</span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100">
+          <template #default="{ row }">
+            <el-button link type="primary" size="small" @click="openHomework(row.id)">查看/作答</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 我的错题本（错题自动收录 + 按课程分组 + 掌握标记） -->
+    <el-card shadow="never" style="margin-top: 16px">
+      <template #header>
+        <div class="card-header">
+          <span>我的错题本</span>
+          <div>
+            <el-tag v-if="mistakeStats" size="small" effect="plain" style="margin-right: 6px">
+              未掌握 {{ mistakeStats.unresolved }} 题
+            </el-tag>
+            <el-tag size="small" effect="plain" type="success" style="margin-right: 6px">
+              已掌握 {{ mistakeStats.mastered }} 题
+            </el-tag>
+            <el-button size="small" :loading="mistakeLoading" @click="loadMistakes">刷新</el-button>
+          </div>
+        </div>
+      </template>
+      <el-empty v-if="!mistakeGroups.length" description="暂无错题：作业/考试中的错题会自动收录，也可手动添加" :image-size="60" />
+      <div v-for="g in mistakeGroups" :key="g.courseName" style="margin-bottom: 8px">
+        <p style="margin: 8px 0 6px; font-weight: 600">
+          {{ g.courseName }}
+          <el-tag size="small" effect="plain" style="margin-left: 6px">共 {{ g.total }} 题 / 未掌握 {{ g.unresolved }}</el-tag>
+        </p>
+        <el-table :data="g.items" border stripe size="small">
+          <el-table-column label="知识点" width="110">
+            <template #default="{ row }">{{ row.knowledgePoint || '未分类' }}</template>
+          </el-table-column>
+          <el-table-column prop="questionContent" label="题目" min-width="180" show-overflow-tooltip />
+          <el-table-column label="我的答案" width="120">
+            <template #default="{ row }">
+              <span style="color: #f56c6c">{{ row.wrongAnswer }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="正确答案" width="120">
+            <template #default="{ row }">
+              <span style="color: #67c23a">{{ row.rightAnswer }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="错因" width="90">
+            <template #default="{ row }">{{ row.mistakeReason }}</template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag v-if="row.status === 'MASTERED'" size="small" type="success">已掌握</el-tag>
+              <el-tag v-else size="small" type="danger">未掌握</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="130">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.status !== 'MASTERED'"
+                link type="primary" size="small"
+                @click="markMastered(row.id)"
+              >标记掌握</el-button>
+              <el-button link type="danger" size="small" @click="delMistake(row.id)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-card>
+
+    <!-- AI 学科答疑（本地大模型，作业帮式 AI 辅导） -->
+    <el-card shadow="never" style="margin-top: 16px">
+      <template #header>
+        <div class="card-header">
+          <span>AI 学科答疑</span>
+          <el-tag size="small" effect="plain">本地大模型辅导</el-tag>
+        </div>
+      </template>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <el-select v-model="tutorSubject" placeholder="学科（选填）" style="width: 130px" clearable>
+          <el-option v-for="s in ['数学', '英语', '语文', '物理', '化学', '生物', '高数', '编程']" :key="s" :label="s" :value="s" />
+        </el-select>
+        <el-input
+          v-model="tutorQuestion"
+          placeholder="输入不会做的题目或知识点，例如：洛必达法则怎么用？"
+          style="flex: 1; min-width: 260px"
+          clearable
+          @keyup.enter="askTutor"
+        />
+        <el-button type="primary" :loading="tutorLoading" @click="askTutor">提问</el-button>
+      </div>
+      <div v-if="tutorAnswer" style="margin-top: 12px">
+        <el-alert type="success" :closable="false">
+          <template #title>
+            <div style="white-space: pre-wrap; line-height: 1.8">{{ tutorAnswer }}</div>
+          </template>
+        </el-alert>
+      </div>
+    </el-card>
   </div>
+
+  <!-- 作业作答 -->
+  <el-dialog v-model="hwDialog" :title="hwDetail?.title || '作业'" width="760px" destroy-on-close>
+    <div v-loading="hwLoading">
+      <template v-if="hwDetail">
+        <p style="color: #909399; font-size: 13px; margin-top: 0">
+          {{ hwDetail.courseName }} · 满分 {{ hwDetail.totalScore }}
+          <span v-if="hwDetail.deadline"> · 截止 {{ formatTime(hwDetail.deadline) }}</span>
+        </p>
+        <div v-for="q in hwDetail.questions || []" :key="q.no" class="practice-item">
+          <p class="practice-stem">
+            <el-tag size="small" effect="plain">
+              {{ { CHOICE: '单选', FILL: '填空', ESSAY: '简答' }[q.type] || q.type }}
+            </el-tag>
+            {{ q.no }}. {{ q.content }}
+          </p>
+          <el-input
+            v-model="hwAnswers[q.no]"
+            :type="q.type === 'ESSAY' ? 'textarea' : 'text'"
+            :rows="q.type === 'ESSAY' ? 3 : 1"
+            :placeholder="q.type === 'ESSAY' ? '输入你的作答（教师/AI 批改）' : '输入你的答案'"
+          />
+        </div>
+      </template>
+    </div>
+    <template #footer>
+      <el-button @click="hwDialog = false">关闭</el-button>
+      <el-button
+        v-if="hwDetail && !hwDetail.submission"
+        type="primary" :loading="submitting" :disabled="!hwDetail"
+        @click="submitHw"
+      >提交作业（客观题自动批改）</el-button>
+    </template>
+  </el-dialog>
 
   <el-dialog v-model="practiceDialog" title="巩固练习" width="760px" destroy-on-close>
     <div v-loading="practiceLoading">
@@ -189,6 +350,9 @@ import { myOverview, myScores } from '@/api/portal'
 import { myPractices, practiceDetail } from '@/api/exam'
 import { myScoreTrend } from '@/api/vip'
 import { listBase } from '@/api/base'
+import { myHomework, studentHomeworkDetail, submitHomework } from '@/api/homework'
+import { myMistakeList, myMistakeStats, markMistakeMastered, removeMistake } from '@/api/mistake'
+import { aiTutor } from '@/api/ai'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -210,6 +374,26 @@ const scoreRef = ref()
 const trendRef = ref()
 let scoreChart
 let trendChart
+
+/** 我的作业 */
+const homeworkList = ref([])
+const homeworkLoading = ref(false)
+const hwDialog = ref(false)
+const hwDetail = ref(null)
+const hwLoading = ref(false)
+const hwAnswers = ref({})
+const submitting = ref(false)
+
+/** 我的错题本 */
+const mistakeGroups = ref([])
+const mistakeStats = ref({ total: 0, unresolved: 0, mastered: 0 })
+const mistakeLoading = ref(false)
+
+/** AI 学科答疑 */
+const tutorSubject = ref('')
+const tutorQuestion = ref('')
+const tutorAnswer = ref('')
+const tutorLoading = ref(false)
 
 function gpaColor(gpa) {
   const v = Number(gpa)
@@ -309,6 +493,104 @@ function practiceDiffText(level) {
   return { EASY: '基础', MEDIUM: '进阶', HARD: '提高' }[level] || '练习'
 }
 
+/** 我的作业 */
+async function loadHomework() {
+  homeworkLoading.value = true
+  try {
+    homeworkList.value = await myHomework()
+  } finally {
+    homeworkLoading.value = false
+  }
+}
+
+async function openHomework(id) {
+  hwLoading.value = true
+  hwDialog.value = true
+  hwDetail.value = null
+  hwAnswers.value = {}
+  try {
+    const d = await studentHomeworkDetail(id)
+    hwDetail.value = d
+    // 已提交时回填答案，便于查看
+    const sub = d.submission
+    if (sub && sub.answersJson) {
+      try {
+        for (const a of JSON.parse(sub.answersJson)) hwAnswers.value[a.no] = a.answer
+      } catch { /* 忽略 */ }
+    }
+  } finally {
+    hwLoading.value = false
+  }
+}
+
+async function submitHw() {
+  const answers = Object.entries(hwAnswers.value).map(([no, answer]) => ({ no, answer: answer || '' }))
+  submitting.value = true
+  try {
+    await submitHomework(hwDetail.value.id, answers)
+    ElMessage.success('提交成功，客观题已自动批改，错题已收录错题本')
+    hwDialog.value = false
+    await loadHomework()
+  } catch (e) {
+    ElMessage.error(e.message || '提交失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+/** 我的错题本 */
+async function loadMistakes() {
+  mistakeLoading.value = true
+  try {
+    mistakeGroups.value = await myMistakeList()
+    const st = await myMistakeStats()
+    mistakeStats.value = st
+  } catch (e) {
+    ElMessage.error(e.message || '错题本加载失败')
+  } finally {
+    mistakeLoading.value = false
+  }
+}
+
+async function markMastered(id) {
+  try {
+    await markMistakeMastered(id)
+    ElMessage.success('已标记掌握')
+    await loadMistakes()
+  } catch (e) {
+    ElMessage.error(e.message || '操作失败')
+  }
+}
+
+async function delMistake(id) {
+  try {
+    await removeMistake(id)
+    ElMessage.success('已删除')
+    await loadMistakes()
+  } catch (e) {
+    ElMessage.error(e.message || '删除失败')
+  }
+}
+
+/** AI 学科答疑 */
+async function askTutor() {
+  const q = tutorQuestion.value.trim()
+  if (!q) {
+    ElMessage.warning('请先输入要解答的问题')
+    return
+  }
+  tutorLoading.value = true
+  tutorAnswer.value = ''
+  try {
+    const res = await aiTutor(q, tutorSubject.value)
+    tutorAnswer.value = res.content
+  } catch (e) {
+    ElMessage.error(e.message || '本地大模型不可用，请确认 Ollama 已启动')
+  } finally {
+    tutorLoading.value = false
+  }
+}
+
 function renderCharts() {
   nextTick(() => {
     const list = scores.value
@@ -372,6 +654,8 @@ onMounted(async () => {
   terms.value = await listBase('term')
   await loadScores()
   await loadPractices()
+  await loadHomework()
+  await loadMistakes()
   renderCharts()
   window.addEventListener('resize', handleResize)
 })
