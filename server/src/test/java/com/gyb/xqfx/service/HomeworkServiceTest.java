@@ -38,6 +38,7 @@ class HomeworkServiceTest {
     private ClazzMapper clazzMapper;
     private MistakeBookService mistakeBookService;
     private DataScopeService dataScopeService;
+    private CourseSpaceService courseSpaceService;
     private OllamaClient ollamaClient;
     private HomeworkService service;
 
@@ -53,7 +54,7 @@ class HomeworkServiceTest {
         dataScopeService = Mockito.mock(DataScopeService.class);
         ollamaClient = Mockito.mock(OllamaClient.class);
         var offeringMapper = Mockito.mock(CourseOfferingMapper.class);
-        var courseSpaceService = Mockito.mock(CourseSpaceService.class);
+        courseSpaceService = Mockito.mock(CourseSpaceService.class);
         service = new HomeworkService(homeworkMapper, submissionMapper, studentMapper, clazzMapper,
                 offeringMapper, mistakeBookService, courseSpaceService, dataScopeService, ollamaClient, objectMapper);
     }
@@ -152,6 +153,40 @@ class HomeworkServiceTest {
         hw.setStatus("CLOSED");
         when(homeworkMapper.selectById(9L)).thenReturn(hw);
         when(studentMapper.selectById(3L)).thenReturn(student(3L, 5L, "李四"));
+        assertThrows(BusinessException.class,
+                () -> service.submit(3L, 9L, List.of(ans("1", "A"))));
+        verify(submissionMapper, never()).insert(any(HomeworkSubmission.class));
+    }
+
+    @Test
+    @DisplayName("提交作业：章节测验（教学班 offering）选课学生可提交")
+    void submit_offering_ok() throws Exception {
+        String questions = objectMapper.writeValueAsString(List.of(q("1", "CHOICE", "A", 10)));
+        Homework hw = homework(9L, null, questions, LocalDateTime.now().plusDays(1));
+        hw.setCourseOfferingId(4L);   // clazz_id 为空，归属教学班
+        when(homeworkMapper.selectById(9L)).thenReturn(hw);
+        when(studentMapper.selectById(3L)).thenReturn(student(3L, 2L, "李四"));
+        when(courseSpaceService.offeringStudents(4L))
+                .thenReturn(List.of(student(3L, 2L, "李四")));   // 该生已选课
+        when(submissionMapper.selectOne(any())).thenReturn(null);
+        when(submissionMapper.insert(any(HomeworkSubmission.class))).thenReturn(1);
+        when(mistakeBookService.add(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(100L);
+
+        service.submit(3L, 9L, List.of(ans("1", "A")));
+        verify(submissionMapper).insert(any(HomeworkSubmission.class));
+    }
+
+    @Test
+    @DisplayName("提交作业：章节测验非选课学生拒绝")
+    void submit_offering_forbidden() throws Exception {
+        String questions = objectMapper.writeValueAsString(List.of(q("1", "CHOICE", "A", 10)));
+        Homework hw = homework(9L, null, questions, LocalDateTime.now().plusDays(1));
+        hw.setCourseOfferingId(4L);
+        when(homeworkMapper.selectById(9L)).thenReturn(hw);
+        when(studentMapper.selectById(3L)).thenReturn(student(3L, 2L, "李四"));
+        when(courseSpaceService.offeringStudents(4L)).thenReturn(List.of());   // 未选课
+
         assertThrows(BusinessException.class,
                 () -> service.submit(3L, 9L, List.of(ans("1", "A"))));
         verify(submissionMapper, never()).insert(any(HomeworkSubmission.class));

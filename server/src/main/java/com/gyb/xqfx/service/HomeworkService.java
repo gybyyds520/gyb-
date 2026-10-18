@@ -281,8 +281,8 @@ public class HomeworkService {
             throw new BusinessException(ErrorCode.NOT_FOUND, "作业不存在");
         }
         Student student = studentMapper.selectById(studentId);
-        if (student == null || !student.getClazzId().equals(hw.getClazzId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "该作业不属于你的班级");
+        if (student == null || !studentCanAccess(student, hw)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "该作业不属于你（班级或教学班不符）");
         }
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("id", hw.getId());
@@ -307,8 +307,8 @@ public class HomeworkService {
             throw new BusinessException(ErrorCode.NOT_FOUND, "作业不存在");
         }
         Student student = studentMapper.selectById(studentId);
-        if (student == null || !student.getClazzId().equals(hw.getClazzId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "该作业不属于你的班级");
+        if (student == null || !studentCanAccess(student, hw)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "该作业不属于你（班级或教学班不符）");
         }
         if ("CLOSED".equals(hw.getStatus())
                 || (hw.getDeadline() != null && hw.getDeadline().isBefore(LocalDateTime.now()))) {
@@ -527,6 +527,17 @@ public class HomeworkService {
             }
         }
         return result;
+    }
+
+    /**
+     * 学生是否有权访问该作业：班级作业看班级归属；章节测验（offering）看选课/班级关联教学班
+     */
+    private boolean studentCanAccess(Student student, Homework hw) {
+        if (hw.getCourseOfferingId() != null) {
+            return courseSpaceService.offeringStudents(hw.getCourseOfferingId()).stream()
+                    .anyMatch(s -> s.getId().equals(student.getId()));
+        }
+        return student.getClazzId() != null && student.getClazzId().equals(hw.getClazzId());
     }
 
     /** 作业 + 完成度统计 */
