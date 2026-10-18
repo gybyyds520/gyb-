@@ -7,10 +7,12 @@ import com.gyb.xqfx.client.OllamaClient;
 import com.gyb.xqfx.common.BusinessException;
 import com.gyb.xqfx.common.ErrorCode;
 import com.gyb.xqfx.entity.Clazz;
+import com.gyb.xqfx.entity.CourseOffering;
 import com.gyb.xqfx.entity.Homework;
 import com.gyb.xqfx.entity.HomeworkSubmission;
 import com.gyb.xqfx.entity.Student;
 import com.gyb.xqfx.mapper.ClazzMapper;
+import com.gyb.xqfx.mapper.CourseOfferingMapper;
 import com.gyb.xqfx.mapper.HomeworkMapper;
 import com.gyb.xqfx.mapper.HomeworkSubmissionMapper;
 import com.gyb.xqfx.mapper.StudentMapper;
@@ -40,7 +42,9 @@ public class HomeworkService {
     private final HomeworkSubmissionMapper submissionMapper;
     private final StudentMapper studentMapper;
     private final ClazzMapper clazzMapper;
+    private final CourseOfferingMapper offeringMapper;
     private final MistakeBookService mistakeBookService;
+    private final CourseSpaceService courseSpaceService;
     private final DataScopeService dataScopeService;
     private final OllamaClient ollamaClient;
     private final ObjectMapper objectMapper;
@@ -66,11 +70,19 @@ public class HomeworkService {
      */
     public Long create(Long creatorId, String title, Long courseId, String courseName,
                        Long clazzId, List<Question> questions, LocalDateTime deadline) {
+        return createQuiz(creatorId, title, null, courseId, courseName, clazzId, questions, deadline);
+    }
+
+    /**
+     * 章节测验（学习通装载）：归属教学班 course_offering，题目结构与作业一致
+     */
+    public Long createQuiz(Long creatorId, String title, Long offeringId, Long courseId, String courseName,
+                           Long clazzId, List<Question> questions, LocalDateTime deadline) {
         if (title == null || title.isBlank()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "请输入作业标题");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请输入测验标题");
         }
         if (clazzId == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "请选择作业班级");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请选择测验班级");
         }
         if (questions == null || questions.isEmpty()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "请至少添加一道题目");
@@ -86,6 +98,7 @@ public class HomeworkService {
             Homework hw = new Homework();
             hw.setTitle(title.trim());
             hw.setCourseId(courseId);
+            hw.setCourseOfferingId(offeringId);
             hw.setCourseName(courseName);
             hw.setClazzId(clazzId);
             hw.setCreatorId(creatorId);
@@ -97,10 +110,10 @@ public class HomeworkService {
             hw.setUpdateTime(LocalDateTime.now());
             hw.setIsDeleted(0);
             homeworkMapper.insert(hw);
-            log.info("作业布置: id={}, title={}, clazz={}", hw.getId(), hw.getTitle(), clazzId);
+            log.info("章节测验布置: id={}, title={}, offering={}, clazz={}", hw.getId(), hw.getTitle(), offeringId, clazzId);
             return hw.getId();
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "作业保存失败：" + e.getMessage());
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "测验保存失败：" + e.getMessage());
         }
     }
 
@@ -118,6 +131,62 @@ public class HomeworkService {
         List<Map<String, Object>> result = new ArrayList<>();
         for (Homework hw : list) {
             result.add(withStats(hw));
+        }
+        return result;
+    }
+
+    /**
+     * 教师端：教学班的章节测验列表（学习通装载）
+     */
+    public List<Map<String, Object>> offeringQuizzes(Long offeringId, Long userId) {
+        CourseOffering offering = offeringMapper.selectById(offeringId);
+        if (offering == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "教学班不存在");
+        }
+        if (!dataScopeService.hasAllDataScope(userId)
+                && !courseSpaceService.teacherOwnsOffering(userId, offeringId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "无权访问该教学班");
+        }
+        List<Homework> list = homeworkMapper.selectList(new LambdaQueryWrapper<Homework>()
+                .eq(Homework::getCourseOfferingId, offeringId)
+                .orderByDesc(Homework::getCreateTime));
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Homework hw : list) {
+            result.add(withStats(hw));
+        }
+        return result;
+    }
+
+    /**
+     * 学生端：本人课程章节测验列表（学习通装载）
+     */
+    public List<Map<String, Object>> studentQuizzes(Long studentId) {
+        Student student = studentMapper.selectById(studentId);
+        if (student == null) {
+            return List.of();
+        }
+        List<Long> enrolledIds = courseSpaceService.enrolledOfferingIds(studentId);
+        List<Long> clazzIds = student.getClazzId() == null ? List.of()
+                : offeringMapper.selectList(new LambdaQueryWrapper<CourseOffering>()
+                        .eq(CourseOffering::getClazzId, student.getClazzId()))
+                .stream().map(CourseOffering::getId).toList();
+        java.util.LinkedHashSet<Long> ids = new java.util.LinkedHashSet<>();
+        ids.addAll(enrolledIds);
+        ids.addAll(clazzIds);
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<Homework> list = homeworkMapper.selectList(new LambdaQueryWrapper<Homework>()
+                .in(Homework::getCourseOfferingId, ids)
+                .orderByDesc(Homework::getCreateTime));
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Homework hw : list) {
+            Map<String, Object> row = withStats(hw);
+            row.put("offeringId", hw.getCourseOfferingId());
+            row.put("submitted", submissionMapper.selectCount(new LambdaQueryWrapper<HomeworkSubmission>()
+                    .eq(HomeworkSubmission::getHomeworkId, hw.getId())
+                    .eq(HomeworkSubmission::getStudentId, studentId)) > 0);
+            result.add(row);
         }
         return result;
     }
@@ -252,13 +321,13 @@ public class HomeworkService {
                 answerMap.put(a.no, a.answer == null ? "" : a.answer.trim());
             }
         }
-        // 客观题自动判分
+        // 客观题自动判分（CHOICE/FILL/JUDGE）
         BigDecimal autoScore = BigDecimal.ZERO;
         List<Question> wrongWithAnswer = new ArrayList<>();
         for (Question q : questions) {
             String stuAnswer = answerMap.getOrDefault(q.no, "");
-            if ("CHOICE".equals(q.type) || "FILL".equals(q.type)) {
-                boolean right = q.answer != null && q.answer.trim().equalsIgnoreCase(stuAnswer);
+            if ("CHOICE".equals(q.type) || "FILL".equals(q.type) || "JUDGE".equals(q.type)) {
+                boolean right = judgeRight(q.type, q.answer, stuAnswer);
                 if (right) {
                     autoScore = autoScore.add(q.score == null ? BigDecimal.ZERO : q.score);
                 } else {
@@ -267,6 +336,7 @@ public class HomeworkService {
             }
             // ESSAY 不自动判分，由教师/AI 批改
         }
+
         try {
             String answersJson = objectMapper.writeValueAsString(answers == null ? List.of() : answers);
             HomeworkSubmission sub = submissionMapper.selectOne(new LambdaQueryWrapper<HomeworkSubmission>()
@@ -310,6 +380,23 @@ public class HomeworkService {
             }
         }
         log.info("作业提交并自动批改: student={}, homework={}, autoScore={}", studentId, homeworkId, autoScore);
+    }
+
+    /** 客观题判分：判断题归一化（对/√/T/正确 与 错/×/F/错误），其余忽略大小写比较 */
+    private boolean judgeRight(String type, String answer, String stuAnswer) {
+        if (answer == null || stuAnswer == null) {
+            return false;
+        }
+        if ("JUDGE".equals(type)) {
+            return normalizeJudge(answer) == normalizeJudge(stuAnswer);
+        }
+        return answer.trim().equalsIgnoreCase(stuAnswer.trim());
+    }
+
+    private boolean normalizeJudge(String v) {
+        String s = v.trim();
+        return s.equals("对") || s.equals("√") || s.equals("T") || s.equals("t")
+                || s.equals("正确") || s.equals("YES") || s.equals("yes") || s.equals("true") || s.equals("TRUE");
     }
 
     /**

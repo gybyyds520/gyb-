@@ -11,17 +11,22 @@
 |---|---|
 | `docs/01-竞品分析与功能增强方案.md` | 竞品调研、行业标配能力、功能增强清单 |
 | `docs/02-项目实施计划.md` | 分阶段实施计划、里程碑、风险对策 |
+| `docs/作业帮功能装载方案.md` | 作业帮功能盘点、装载映射、分批实施清单 |
+| `docs/学习通功能装载方案.md` | 学习通功能盘点、装载映射（课程空间/签到/章节测验）、第二批待指令 |
+| `docs/多端化实施方案.md` | Web / 微信小程序 / 移动端 / 桌面端四端规划、技术选型、分批实施 |
 | `README.md` | 系统概述、启动方式、功能一览、已知环境问题 |
 
 ## 二、目录结构
 
 ```
 gybxx/
-├─ docs/        论文与过程文档
+├─ docs/        论文与过程文档（含竞品/作业帮/学习通/多端化方案）
 ├─ sql/         schema.sql（40 张表）+ seed_base.sql（基础数据）+ schema_phase2~12.sql（增量迁移，共 48 张表）
 ├─ server/      Spring Boot 3.2.5 后端
 ├─ web/         Vue 3 + Vite 前端（Web / 移动端响应式）
-└─ ml/          Python 预测模型 + FastAPI 推理服务
+├─ desktop/     Electron 桌面端（加载 web 构建产物，可打包安装包/绿色版）
+├─ ml/          Python 预测模型 + FastAPI 推理服务
+└─ mini/        微信小程序端（uni-app，规划中）
 ```
 
 ## 三、技术栈
@@ -78,6 +83,18 @@ ollama pull llama3.2:3b
 ollama pull nomic-embed-text    # 知识库向量化
 ```
 
+### 6. Windows 桌面端（Electron）
+
+```bash
+cd desktop
+npm install          # 安装 electron 与 electron-builder
+npm run build:web    # 以 http://127.0.0.1:8080/api 为后端地址构建桌面版前端
+npm start            # 启动桌面应用
+npm run pack         # 打包 NSIS 安装包 + 绿色版（release/ 目录）
+```
+
+> 桌面端复用 Web 全部功能；API 地址通过 `VITE_API_BASE` 注入，默认指向本机后端 8080。
+
 后端通过 `xqfx.ollama.*` 配置接入；服务不可用时自动降级为规则化文本，功能不中断。
 
 ## 五、当前进度
@@ -96,6 +113,11 @@ ollama pull nomic-embed-text    # 知识库向量化
 - [x] Phase 6.9：启动实时初始化 + 实时数据模拟器 + 管理员监察中心（至高无上：12 维度全量记录 + 任意账号全景 + 删除三端账号）
 - [x] Phase 6.10：本地 AI 场景扩展六件套——预警周报自动生成、AI 干预方案生成落工单、自然语言查学情（NL2Query）、成绩单 AI 评语、家长通知文案个性化、学情报告导出摘要
 - [x] 市场同类产品对标与能力补齐（学业指标、SLA 时效、多维下钻、数据导出、三端角色隔离）
+- [x] Phase 6.11：作业帮功能装载（错题本 + AI 学科答疑 + 作业闭环）
+- [x] Phase 6.12：试卷录入（图片/PDF/Word → 本地 OCR/文本提取 → AI 生成题库）
+- [x] Phase 6.13：学习通功能装载（课程空间章节/资料/讨论 + 数字码签到 + 章节测验）
+- [x] Phase 6.14：多端化第一批（Web 移动端响应式 + Electron Windows 桌面端）
+- [ ] Phase 6.15：多端化第二批（微信小程序 uni-app 工程）
 - [ ] Phase 7：论文与答辩
 
 ### 已完成功能一览
@@ -129,6 +151,10 @@ ollama pull nomic-embed-text    # 知识库向量化
 | 启动实时状态 | 空库自动初始化演示数据，运行期定时模拟新考勤/在线行为/新预警持续流入 |
 | 监察中心 | 管理员专属（至高无上）：监察三端数据概览、12 维度全量记录、任意账号数据全景、删除任意学生/教师/家长账号（管理岗受保护） |
 | 会员体系 | 学生/家长三档会员与充值开通，免费功能与会员功能明确分档，教师端不参与 |
+| 课程空间 | 教师/学生按教学班进入课程空间：章节（CRUD + 自动编号）、资料（上传/下载/删除，本地存储）、讨论区（发帖/回复/点赞/教师置顶） |
+| 课堂签到 | 教师发起 6 位数字码签到 → 学生输码签到 → 自动写考勤（当天去重）→ 教学班通知；教师统计应到/已到/未到名单、结束签到、补签 |
+| 章节测验 | 教师按教学班组卷（单选/填空/判断/简答，可从题库选题）发布章节测验；学生在线作答，客观题自动判分（判断题对/√/T 归一化），成绩回传学情 |
+| 多端化 | Web 端移动响应式（<768px 侧栏转抽屉、卡片流）+ Windows 桌面端（Electron 加载 Web 产物，可打包安装包/绿色版）；微信小程序端规划中（uni-app） |
 
 ### 三端角色与可见范围
 
@@ -263,6 +289,43 @@ ollama pull nomic-embed-text    # 知识库向量化
 
 单次生成 1~6 道，难度由易到难递进，题目情境与原题不同；答案与解析默认折叠，学生先作答再看。
 
+### 学习通功能装载（课程空间 / 课堂签到 / 章节测验）
+
+按《docs/学习通功能装载方案.md》装载"在线教学空间"类能力，让项目具备学习通式的课程组织与课堂互动体验。方案文档含学习通全量功能盘点、装载映射表与第二批待指令（投票/抢答/随机点名/学习时长统计）。
+
+**① 课程空间**（`/course-space`，菜单 `COURSE_SPACE`，教师系 + 学生端可见；家长端不开放）
+- 我的课程：教师按所授教学班、学生按选课关系（`course_enrollment`，跨班选修）∪ 行政班
+- 章节：`course_chapter` 表，教师新建/编辑/删除（章号自动递增），学生查看
+- 资料：`course_material` 表，教师上传（存储 `upload/course/`）、学生下载、教师删除
+- 讨论区：`course_discussion` + `course_discussion_reply`，发帖/回复/点赞/教师置顶
+
+**② 课堂签到**（`/checkin`）
+- 教师发起 6 位数字码签到（`course_checkin`）→ 学生输码签到 → 写 `attendance`（status=PRESENT，remark=CHECKIN:{id}）→ 教学班站内通知
+- 防重复：同一学生同一教学班当天仅可签一次；教师可统计应到/已到/未到名单、结束签到、补签
+
+**③ 章节测验**（复用作业闭环，新增教学班维度）
+- `homework` 表新增 `course_offering_id` 列；教师按教学班组卷发布，支持从题库选题导入（`/bank/list` 勾选）
+- 学生在线作答：单选/填空自动判分、判断（对/√/T/正确 归一化等价）、简答人工/AI 批改；得分进入作业闭环统计
+
+| 端点 | 说明 |
+|---|---|
+| `GET /course-space/my-courses` | 我的课程（教师/学生按身份） |
+| `GET/POST /course-space/{offeringId}/chapters`、`PUT/DELETE /course-space/chapters/{id}` | 章节管理 |
+| `GET/POST /course-space/{offeringId}/materials`、`GET /course-space/materials/{id}/file`、`DELETE /course-space/materials/{id}` | 资料上传/下载/删除 |
+| `GET/POST /course-space/{offeringId}/discussions`、`POST /course-space/discussions/{id}/reply|like|pin` | 讨论区 |
+| `POST /checkin`、`POST /checkin/{id}/sign`、`/close`、`/manual-sign`、`GET /checkin/list|{id}/stats|student/mine` | 签到全链路 |
+| `GET /homework/offering/{offeringId}`、`GET /homework/offering/mine` | 教学班测验列表（教师/学生） |
+
+**验证**：新增单测 15 个（CourseSpace 7 + Checkin 8）+ 全量回归 **2041 用例全过**；端到端实测——教师建章节 → 发起签到（码 058382）→ 学生输码签到成功 → 重复签到返回 400（去重生效）→ 统计应到 22/已到 1 → 组章节测验（3 题 60 分）→ 学生作答满分 60 → 讨论发帖/回复/点赞 → 上传 docx 资料 → 教学班测验列表可见。教师端与学生端课程空间页面均已在浏览器实测渲染（含移动断点）。
+
+### 多端化（Web / 微信小程序 / 移动端 / Windows 桌面端）
+
+按《docs/多端化实施方案.md》推进，原则：本地化、免费优先；后端 REST API 天然多端复用。
+
+- **Web 端移动响应式**：布局壳在 `<768px` 自动切换（左侧菜单转抽屉、汉堡按钮、内容单列卡片流、表格滚动兜底）；课程空间等核心页栅格已按 `xs/md` 断点适配，手机浏览器可直接使用
+- **Windows 桌面端（已完成）**：`desktop/` Electron 工程加载 Web 构建产物（`VITE_API_BASE=http://127.0.0.1:8080/api` 注入），支持系统托盘常驻；`npm run pack` 可打包 NSIS 安装包 + 绿色版
+- **微信小程序端（规划中）**：uni-app（Vue3 + uv-ui）独立工程，底部 TabBar（首页/课程/消息/我的）参照学习通；后端已具备 REST + JWT 可直接复用
+
 ### 站内通讯（教师 ↔ 学生 ↔ 家长）
 
 三端共用同一套接口（功能码 `MESSAGE`），但**不是全员可聊**——可联系对象由身份关系推导，越权发送直接拦截。
@@ -330,6 +393,7 @@ ollama pull nomic-embed-text    # 知识库向量化
 | 即时通讯(1) | im_message |
 | 会员体系(3) | vip_level, vip_order, user_vip |
 | 学习目标(1) | learning_goal |
+| 学习通装载(6) | course_chapter, course_material, course_discussion, course_discussion_reply, course_checkin, course_enrollment（homework 新增 course_offering_id 列） |
 
 ## 七、测试
 
@@ -344,7 +408,7 @@ cd server && ./mvnw.cmd test -Pcoverage
 cd web && npm run test
 ```
 
-当前用例数：**后端 1962 + 前端 519 + ML 62 = 2543**，已超过 ≥1000 的目标。
+当前用例数：**后端 2041 + 前端 519 + ML 62 = 2622**，已超过 ≥1000 的目标。
 
 覆盖方式：边界值 + 等价类 + 参数化数据驱动（`@MethodSource` 生成组合）+ Mockito 隔离外部依赖。
 重点覆盖：脱敏、数据质量、预警分级、干预流转、画像维度、标签规则、向量相似度、模板渲染、通知与数据权限、试卷统计（难度/区分度）、课堂表现、系统概览聚合。
@@ -359,4 +423,4 @@ cd web && npm run test
 5. **SQL 文件含 UTF-8 BOM**：直接用 `mysql < file.sql` 会报语法错误，需先去除 BOM
    （PowerShell：`[IO.File]::WriteAllText($dst, $txt.TrimStart([char]0xFEFF), New-Object Text.UTF8Encoding($false))`）。
 6. **JDBC URL 编码参数**：MySQL Connector/J 不接受 `characterEncoding=utf8mb4`，需写 `utf8`。
-7. **未包含 Electron 桌面端**：前端已做响应式适配（桌面 / 平板 / 手机），桌面端打包不再单独提供。
+7. **Electron 桌面端**：`desktop/` 工程加载 `web` 构建产物；首次 `npm install` 会下载 Electron 发行版（约 100MB），打包时 `electron-builder` 需联网下载 NSIS 工具链。API 地址通过 `VITE_API_BASE` 注入（默认 `http://127.0.0.1:8080/api`），后端 CORS 已放开任意来源。

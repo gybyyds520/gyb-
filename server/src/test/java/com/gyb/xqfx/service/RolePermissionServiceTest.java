@@ -81,7 +81,8 @@ class RolePermissionServiceTest {
         assertEquals(List.of(RolePermissionService.MY_STUDY,
                 RolePermissionService.VIP, RolePermissionService.AGENT,
                 RolePermissionService.NOTIFY, RolePermissionService.MESSAGE,
-                RolePermissionService.TODO, RolePermissionService.GOAL), codes);
+                RolePermissionService.TODO, RolePermissionService.GOAL,
+                RolePermissionService.COURSE_SPACE), codes);
     }
 
     @Test
@@ -160,7 +161,7 @@ class RolePermissionServiceTest {
         List<String> common = List.of(RolePermissionService.NOTIFY,
                 RolePermissionService.MESSAGE, RolePermissionService.VIP,
                 RolePermissionService.GOAL, RolePermissionService.TODO,
-                RolePermissionService.AGENT);
+                RolePermissionService.AGENT, RolePermissionService.COURSE_SPACE);
         List<String> teacher = service.visibleMenus("TEACHER").stream()
                 .map(m -> m.get("code"))
                 .filter(c -> !common.contains(c)).toList();

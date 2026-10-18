@@ -23,6 +23,9 @@ public class Homework extends BaseEntity {
     /** 课程ID */
     private Long courseId;
 
+    /** 归属教学班（章节测验） */
+    private Long courseOfferingId;
+
     private String courseName;
 
     /** 班级ID */

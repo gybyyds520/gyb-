@@ -8,6 +8,7 @@ import com.gyb.xqfx.entity.Homework;
 import com.gyb.xqfx.entity.HomeworkSubmission;
 import com.gyb.xqfx.entity.Student;
 import com.gyb.xqfx.mapper.ClazzMapper;
+import com.gyb.xqfx.mapper.CourseOfferingMapper;
 import com.gyb.xqfx.mapper.HomeworkMapper;
 import com.gyb.xqfx.mapper.HomeworkSubmissionMapper;
 import com.gyb.xqfx.mapper.StudentMapper;
@@ -51,8 +52,10 @@ class HomeworkServiceTest {
         mistakeBookService = Mockito.mock(MistakeBookService.class);
         dataScopeService = Mockito.mock(DataScopeService.class);
         ollamaClient = Mockito.mock(OllamaClient.class);
+        var offeringMapper = Mockito.mock(CourseOfferingMapper.class);
+        var courseSpaceService = Mockito.mock(CourseSpaceService.class);
         service = new HomeworkService(homeworkMapper, submissionMapper, studentMapper, clazzMapper,
-                mistakeBookService, dataScopeService, ollamaClient, objectMapper);
+                offeringMapper, mistakeBookService, courseSpaceService, dataScopeService, ollamaClient, objectMapper);
     }
 
     private Student student(Long id, Long clazzId, String name) {

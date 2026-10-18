@@ -57,6 +57,7 @@ public class RolePermissionService {
     public static final String MONITOR = "MONITOR";
     public static final String HOMEWORK_TEACHER = "HOMEWORK_TEACHER";
     public static final String PAPER_SCAN = "PAPER_SCAN";
+    public static final String COURSE_SPACE = "COURSE_SPACE";
 
     /** 学生端与家长端角色 */
     public static final Set<String> STUDENT_ROLES = Set.of("STUDENT");
@@ -118,6 +119,9 @@ public class RolePermissionService {
         MATRIX.put(MONITOR, Set.of("ADMIN"));
         MATRIX.put(HOMEWORK_TEACHER, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"));
         MATRIX.put(PAPER_SCAN, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"));
+        // 课程空间（学习通装载）：教师管理课程，学生进入学习；家长端不开放
+        MATRIX.put(COURSE_SPACE, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN",
+                "COUNSELOR", "TEACHER", "STUDENT"));
 
         // code -> { 名称, 路由, 分组 }
         // 分组体系（按功能作用归类，三端共用语义，前端按端渲染结构与标题）：
@@ -162,6 +166,7 @@ public class RolePermissionService {
         MENU.put(MONITOR, new String[]{"监察中心", "/monitor", "sys"});
         MENU.put(HOMEWORK_TEACHER, new String[]{"作业管理", "/homework", "data"});
         MENU.put(PAPER_SCAN, new String[]{"试卷录入", "/scan", "data"});
+        MENU.put(COURSE_SPACE, new String[]{"课程空间", "/course-space", "data"});
     }
 
     /**

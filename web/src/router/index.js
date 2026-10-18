@@ -192,6 +192,12 @@ const routes = [
         name: 'Parent',
         component: () => import('@/views/parent/ParentView.vue'),
         meta: { title: '家校协同', code: 'PARENT_PORTAL' }
+      },
+      {
+        path: 'course-space',
+        name: 'CourseSpace',
+        component: () => import('@/views/CourseSpaceView.vue'),
+        meta: { title: '课程空间', code: 'COURSE_SPACE' }
       }
     ]
   },

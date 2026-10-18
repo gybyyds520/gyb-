@@ -41,6 +41,8 @@ public class HomeworkController {
         private Long courseId;
         private String courseName;
         private Long clazzId;
+        /** 归属教学班（章节测验） */
+        private Long courseOfferingId;
         /** 题目数组 [{no,type,content,answer,score,knowledgePoint}] */
         private List<HomeworkService.Question> questions;
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -64,8 +66,27 @@ public class HomeworkController {
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<Long> create(@Valid @RequestBody CreateRequest req) {
         Long teacherId = SecurityUtils.currentUserId();
+        if (req.getCourseOfferingId() != null) {
+            return Result.success(homeworkService.createQuiz(teacherId, req.getTitle(), req.getCourseOfferingId(),
+                    req.getCourseId(), req.getCourseName(), req.getClazzId(), req.getQuestions(), req.getDeadline()),
+                    "章节测验已布置");
+        }
         return Result.success(homeworkService.create(teacherId, req.getTitle(), req.getCourseId(),
                 req.getCourseName(), req.getClazzId(), req.getQuestions(), req.getDeadline()), "作业已布置");
+    }
+
+    @Operation(summary = "教师端：教学班章节测验列表")
+    @GetMapping("/offering/{offeringId}")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
+    public Result<List<Map<String, Object>>> offeringQuizzes(@PathVariable Long offeringId) {
+        return Result.success(homeworkService.offeringQuizzes(offeringId, SecurityUtils.currentUserId()));
+    }
+
+    @Operation(summary = "学生端：本人课程章节测验列表")
+    @GetMapping("/offering/mine")
+    @RequireRole({"STUDENT"})
+    public Result<List<Map<String, Object>>> studentQuizzes() {
+        return Result.success(homeworkService.studentQuizzes(SecurityUtils.currentStudentId()));
     }
 
     @Operation(summary = "教师端：班级作业列表（含完成度）")

@@ -5,6 +5,16 @@ export function teacherHomeworkList(clazzId) {
   return request.get('/homework/teacher', { params: { clazzId } })
 }
 
+/** 教师端：教学班章节测验列表 */
+export function offeringQuizzes(offeringId) {
+  return request.get(`/homework/offering/${offeringId}`)
+}
+
+/** 学生端：本人课程章节测验列表 */
+export function studentQuizzes() {
+  return request.get('/homework/offering/mine')
+}
+
 /** 教师端：作业详情（含提交明细） */
 export function teacherHomeworkDetail(homeworkId) {
   return request.get(`/homework/teacher/${homeworkId}`)
