@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -451,5 +452,60 @@ class MonitorServiceTest {
         assertEquals(1, par.getParentChildren().size());
         assertTrue(par.getParentChildren().get(0).getSubject().contains("张三"));
         assertEquals(2L, par.getStat().getFeedbackCount());
+    }
+
+    @Test
+    @DisplayName("管理员删除三端账号：学生/家长可删，管理岗受保护")
+    void testDeleteAccount() {
+        SysUserMapper sum = mock(SysUserMapper.class);
+        StudentMapper sm = mock(StudentMapper.class);
+        TeacherMapper tm = mock(TeacherMapper.class);
+        StudentParentMapper spm = mock(StudentParentMapper.class);
+
+        SysUser stu = new SysUser();
+        stu.setId(200L);
+        stu.setUsername("stu200");
+        stu.setRealName("学生甲");
+        stu.setUserType("STUDENT");
+        stu.setStudentId(5L);
+        when(sum.selectById(200L)).thenReturn(stu);
+
+        SysUser par = new SysUser();
+        par.setId(201L);
+        par.setUsername("par201");
+        par.setRealName("家长甲");
+        par.setUserType("PARENT");
+        when(sum.selectById(201L)).thenReturn(par);
+
+        SysUser adm = new SysUser();
+        adm.setId(1L);
+        adm.setUsername("admin");
+        adm.setUserType("ADMIN");
+        when(sum.selectById(1L)).thenReturn(adm);
+
+        MonitorService service = newService(sm, tm, spm, sum, mock(LearningGoalMapper.class),
+                mock(ProfileSnapshotMapper.class), mock(NotifyMessageMapper.class), mock(ImMessageMapper.class),
+                mock(WarningRecordMapper.class), mock(InterventionTicketMapper.class), mock(ParentFeedbackMapper.class),
+                mock(ScoreMapper.class), mock(PredictionResultMapper.class), mock(AuditLogMapper.class),
+                mock(AiCallLogMapper.class), mock(ClazzMapper.class), mock(MajorMapper.class),
+                mock(CollegeMapper.class), mock(CourseMapper.class), mock(CourseOfferingMapper.class),
+                mock(AttendanceMapper.class), mock(OnlineBehaviorMapper.class));
+
+        // 删除学生账号：级联学生记录与家长绑定
+        String r1 = service.deleteAccount(200L);
+        assertTrue(r1.contains("学生甲"));
+        verify(sm).deleteById(5L);
+        verify(spm).delete(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+        verify(sum).deleteById(200L);
+
+        // 删除家长账号：清理绑定并删登录账号
+        String r2 = service.deleteAccount(201L);
+        assertTrue(r2.contains("家长甲"));
+        verify(spm, org.mockito.Mockito.times(2)).delete(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+        verify(sum).deleteById(201L);
+
+        // 管理岗账号受保护
+        assertThrows(IllegalArgumentException.class, () -> service.deleteAccount(1L));
+        verify(sum, org.mockito.Mockito.never()).deleteById(1L);
     }
 }

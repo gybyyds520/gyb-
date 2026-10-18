@@ -1,5 +1,6 @@
 package com.gyb.xqfx.controller;
 
+import com.gyb.xqfx.annotation.Audit;
 import com.gyb.xqfx.annotation.RequireRole;
 import com.gyb.xqfx.common.PageResult;
 import com.gyb.xqfx.common.Result;
@@ -67,5 +68,13 @@ public class MonitorController {
     @GetMapping("/account/{id}")
     public Result<MonitorVO.AccountDetail> accountDetail(@PathVariable Long id) {
         return Result.success(monitorService.accountDetail(id));
+    }
+
+    @Operation(summary = "删除任意学生/教师/家长账号（至高无上权限）")
+    @RequireRole("ADMIN")
+    @Audit(module = "监察中心", operation = "删除账号")
+    @DeleteMapping("/account/{id}")
+    public Result<String> deleteAccount(@PathVariable Long id) {
+        return Result.success(monitorService.deleteAccount(id));
     }
 }

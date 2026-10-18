@@ -131,7 +131,11 @@
             <div class="account-items">
               <div v-for="a in accountList" :key="a.id" class="account-item"
                    :class="{ active: a.id === accountDetail?.id }" @click="loadAccount(a.id)">
-                <div class="a-name">{{ a.name }}</div>
+                <div class="a-name">
+                  {{ a.name }}
+                  <el-button size="small" type="danger" text class="a-del"
+                             @click.stop="onDeleteAccount(a)">删除</el-button>
+                </div>
                 <div class="a-sub">{{ a.no }} · {{ a.extra }}</div>
               </div>
               <el-empty v-if="!accountList.length" description="暂无账号" :image-size="50" />
@@ -211,7 +215,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { monitorOverview, monitorLatest, monitorRecords, monitorAccounts, monitorAccount } from '@/api/monitor'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { monitorOverview, monitorLatest, monitorRecords, monitorAccounts, monitorAccount, monitorDeleteAccount } from '@/api/monitor'
 
 const overview = ref(null)
 const latest = ref(null)
@@ -277,6 +282,24 @@ async function loadAccounts() {
 
 async function loadAccount(id) {
   accountDetail.value = await monitorAccount(id)
+}
+
+async function onDeleteAccount(a) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除该${roleText(accountRole.value)}账号「${a.name}（${a.no || '无账号'}）」？删除后其登录权限与关联业务数据将一并移除，此操作不可恢复。`,
+      '至高无上权限 · 删除账号',
+      { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' }
+    )
+  } catch {
+    return
+  }
+  await monitorDeleteAccount(a.id)
+  ElMessage.success('账号已删除')
+  if (accountDetail.value?.id === a.id) {
+    accountDetail.value = null
+  }
+  await loadAccounts()
 }
 
 const roleText = (r) => ({ STUDENT: '学生', TEACHER: '教师', PARENT: '家长', ADMIN: '管理员' })[r] || r
@@ -422,6 +445,18 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 600;
   color: #1f2329;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.a-del {
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+.account-item:hover .a-del {
+  opacity: 1;
 }
 
 .a-sub {

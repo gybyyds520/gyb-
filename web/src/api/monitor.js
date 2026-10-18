@@ -29,3 +29,8 @@ export function monitorAccounts(role) {
 export function monitorAccount(id) {
   return request.get(`/monitor/account/${id}`)
 }
+
+/** 监察中心：删除任意学生/教师/家长账号 */
+export function monitorDeleteAccount(id) {
+  return request.delete(`/monitor/account/${id}`)
+}

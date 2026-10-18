@@ -9,6 +9,7 @@ import com.gyb.xqfx.mapper.*;
 import com.gyb.xqfx.model.vo.MonitorVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -170,6 +171,49 @@ public class MonitorService {
     }
 
     // ==================== 内部工具 ====================
+
+    /**
+     * 管理员至高无上权限：删除任意学生/教师/家长账号（含其关联业务数据）。
+     * 管理岗账号受保护，不允许删除。
+     *
+     * @return 删除结果描述
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String deleteAccount(Long id) {
+        SysUser u = sysUserMapper.selectById(id);
+        if (u == null) {
+            throw new IllegalArgumentException("账号不存在：" + id);
+        }
+        String type = u.getUserType();
+        if (!"STUDENT".equals(type) && !"TEACHER".equals(type) && !"PARENT".equals(type)) {
+            throw new IllegalArgumentException("管理岗账号受保护，仅可删除学生/教师/家长账号");
+        }
+        String display = u.getRealName() == null ? u.getUsername() : u.getRealName();
+        switch (type) {
+            case "STUDENT" -> {
+                if (u.getStudentId() != null) {
+                    studentMapper.deleteById(u.getStudentId());
+                    studentParentMapper.delete(new LambdaQueryWrapper<StudentParent>()
+                            .eq(StudentParent::getStudentId, u.getStudentId()));
+                }
+                sysUserMapper.deleteById(id);
+                return "已删除学生账号：" + display;
+            }
+            case "TEACHER" -> {
+                if (u.getTeacherId() != null) {
+                    teacherMapper.deleteById(u.getTeacherId());
+                }
+                sysUserMapper.deleteById(id);
+                return "已删除教师账号：" + display;
+            }
+            default -> {
+                studentParentMapper.delete(new LambdaQueryWrapper<StudentParent>()
+                        .eq(StudentParent::getParentUserId, id));
+                sysUserMapper.deleteById(id);
+                return "已删除家长账号：" + display;
+            }
+        }
+    }
 
     /**
      * 全量记录分页：管理员可查看任意端任意维度的全部数据（至高无上权限）。
