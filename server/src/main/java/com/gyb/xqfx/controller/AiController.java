@@ -1,14 +1,24 @@
 package com.gyb.xqfx.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.gyb.xqfx.annotation.RequireRole;
 import com.gyb.xqfx.client.OllamaClient;
 import com.gyb.xqfx.common.Result;
 import com.gyb.xqfx.entity.AiCallLog;
 import com.gyb.xqfx.entity.AiPromptTemplate;
 import com.gyb.xqfx.entity.KnowledgeDoc;
+import com.gyb.xqfx.entity.NotifyMessage;
+import com.gyb.xqfx.entity.StudentParent;
+import com.gyb.xqfx.entity.WarningRecord;
 import com.gyb.xqfx.mapper.AiCallLogMapper;
 import com.gyb.xqfx.mapper.AiPromptTemplateMapper;
+import com.gyb.xqfx.mapper.NotifyMessageMapper;
+import com.gyb.xqfx.mapper.StudentParentMapper;
+import com.gyb.xqfx.mapper.WarningRecordMapper;
+import com.gyb.xqfx.security.SecurityUtils;
 import com.gyb.xqfx.service.AiAnalysisService;
+import com.gyb.xqfx.service.DataScopeService;
 import com.gyb.xqfx.service.KnowledgeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,6 +28,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -34,9 +46,13 @@ public class AiController {
 
     private final AiAnalysisService aiAnalysisService;
     private final KnowledgeService knowledgeService;
+    private final DataScopeService dataScopeService;
     private final OllamaClient ollamaClient;
     private final AiPromptTemplateMapper templateMapper;
     private final AiCallLogMapper callLogMapper;
+    private final NotifyMessageMapper notifyMessageMapper;
+    private final StudentParentMapper studentParentMapper;
+    private final WarningRecordMapper warningRecordMapper;
     private final ObjectMapper objectMapper;
 
     @Operation(summary = "大模型服务健康检查")
@@ -67,6 +83,73 @@ public class AiController {
                                                      @RequestParam(required = false) Long termId,
                                                      @RequestParam(required = false) Long userId) {
         return Result.success(aiAnalysisService.generateAdvice(studentId, termId, userId));
+    }
+
+    @Operation(summary = "① 预警工作周报（AI 聚合解读）")
+    @PostMapping("/weekly-report")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
+    public Result<AiAnalysisService.AiResult> weeklyReport() {
+        return Result.success(aiAnalysisService.generateWeeklyReport(SecurityUtils.currentUserId()));
+    }
+
+    @Operation(summary = "③ 自然语言查学情（NL2Query：规则路由 + AI 解释）")
+    @PostMapping("/query")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER", "STUDENT"})
+    public Result<AiAnalysisService.AiResult> query(@RequestParam String question) {
+        return Result.success(aiAnalysisService.answerLearningQuery(question, SecurityUtils.currentUserId()));
+    }
+
+    @Operation(summary = "④ 成绩单 AI 评语")
+    @PostMapping("/comment")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER", "STUDENT"})
+    public Result<AiAnalysisService.AiResult> comment(@RequestParam Long studentId,
+                                                     @RequestParam(required = false) Long termId) {
+        dataScopeService.requireStudentAccess(studentId);
+        return Result.success(aiAnalysisService.generateComment(studentId, termId, SecurityUtils.currentUserId()));
+    }
+
+    @Operation(summary = "⑤ 家长沟通通知（AI 生成文案，可一键发送给家长）")
+    @PostMapping("/parent-notice/{warningId}")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
+    public Result<Map<String, Object>> parentNotice(@PathVariable Long warningId,
+                                                    @RequestParam(defaultValue = "false") boolean send) {
+        AiAnalysisService.AiResult res = aiAnalysisService.generateParentNotice(warningId, SecurityUtils.currentUserId());
+        Map<String, Object> data = new HashMap<>();
+        data.put("result", res);
+        if (send) {
+            data.put("sent", sendToParent(warningId, res));
+        }
+        return Result.success(data);
+    }
+
+    private boolean sendToParent(Long warningId, AiAnalysisService.AiResult res) {
+        try {
+            WarningRecord w = warningRecordMapper.selectById(warningId);
+            if (w == null) {
+                return false;
+            }
+            List<StudentParent> parents = studentParentMapper.selectList(
+                    new LambdaQueryWrapper<StudentParent>()
+                            .eq(StudentParent::getStudentId, w.getStudentId())
+                            .eq(StudentParent::getStatus, 1));
+            for (StudentParent p : parents) {
+                NotifyMessage m = new NotifyMessage();
+                m.setUserId(p.getParentUserId());
+                m.setMessageType("WARNING");
+                m.setTitle("学情预警通知（辅导员来信）");
+                m.setContent(res.getContent());
+                m.setBizType("WARNING");
+                m.setBizId(warningId);
+                m.setChannel("IN_APP");
+                m.setIsRead(0);
+                m.setCreateTime(LocalDateTime.now());
+                notifyMessageMapper.insert(m);
+            }
+            return !parents.isEmpty();
+        } catch (Exception e) {
+            log.warn("家长通知发送失败：{}", e.getMessage());
+            return false;
+        }
     }
 
     @Operation(summary = "学情问答（SSE 流式 + RAG 检索增强）")

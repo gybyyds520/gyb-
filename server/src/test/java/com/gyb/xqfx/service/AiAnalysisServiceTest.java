@@ -1,6 +1,8 @@
 package com.gyb.xqfx.service;
 
 import com.gyb.xqfx.client.OllamaClient;
+import com.gyb.xqfx.entity.Student;
+import com.gyb.xqfx.entity.WarningRecord;
 import com.gyb.xqfx.mapper.AiCallLogMapper;
 import com.gyb.xqfx.mapper.AiPromptTemplateMapper;
 import com.gyb.xqfx.mapper.AttendanceMapper;
@@ -12,6 +14,7 @@ import com.gyb.xqfx.mapper.ScoreMapper;
 import com.gyb.xqfx.mapper.StudentMapper;
 import com.gyb.xqfx.mapper.TermMapper;
 import com.gyb.xqfx.mapper.WarningRecordMapper;
+import com.gyb.xqfx.model.vo.BigScreenVO;
 import com.gyb.xqfx.service.AiAnalysisService.StudentContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,11 +25,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 /**
  * 大模型学情分析服务测试（纯逻辑部分，Mapper 全部 Mock）
@@ -35,23 +42,40 @@ import static org.junit.jupiter.api.Assertions.*;
 class AiAnalysisServiceTest {
 
     private AiAnalysisService service;
+    private BigScreenService bigScreenService;
+    private StudentMapper studentMapper;
+    private ScoreMapper scoreMapper;
+    private AttendanceMapper attendanceMapper;
+    private OnlineBehaviorMapper onlineBehaviorMapper;
+    private PredictionResultMapper predictionResultMapper;
+    private WarningRecordMapper warningRecordMapper;
+    private TermMapper termMapper;
 
     @BeforeEach
     void setUp() {
+        bigScreenService = Mockito.mock(BigScreenService.class);
+        studentMapper = Mockito.mock(StudentMapper.class);
+        scoreMapper = Mockito.mock(ScoreMapper.class);
+        attendanceMapper = Mockito.mock(AttendanceMapper.class);
+        onlineBehaviorMapper = Mockito.mock(OnlineBehaviorMapper.class);
+        predictionResultMapper = Mockito.mock(PredictionResultMapper.class);
+        warningRecordMapper = Mockito.mock(WarningRecordMapper.class);
+        termMapper = Mockito.mock(TermMapper.class);
         service = new AiAnalysisService(
-                Mockito.mock(StudentMapper.class),
-                Mockito.mock(ScoreMapper.class),
-                Mockito.mock(AttendanceMapper.class),
-                Mockito.mock(OnlineBehaviorMapper.class),
-                Mockito.mock(PredictionResultMapper.class),
-                Mockito.mock(WarningRecordMapper.class),
-                Mockito.mock(TermMapper.class),
+                studentMapper,
+                scoreMapper,
+                attendanceMapper,
+                onlineBehaviorMapper,
+                predictionResultMapper,
+                warningRecordMapper,
+                termMapper,
                 Mockito.mock(ClazzMapper.class),
                 Mockito.mock(AiPromptTemplateMapper.class),
                 Mockito.mock(AiCallLogMapper.class),
                 Mockito.mock(ReportRecordMapper.class),
                 Mockito.mock(OllamaClient.class),
-                Mockito.mock(KnowledgeService.class));
+                Mockito.mock(KnowledgeService.class),
+                bigScreenService);
         ReflectionTestUtils.setField(service, "llmEnabled", false);
         ReflectionTestUtils.setField(service, "fallbackToRule", true);
     }
@@ -212,5 +236,125 @@ class AiAnalysisServiceTest {
         StudentContext ctx = goodStudent();
         ctx.setRiskLevel(null);
         assertTrue(ctx.toText().contains("未知"));
+    }
+
+    // ==================== 新 AI 场景（模型不可用 → 规则化降级） ====================
+
+    private Student stubStudent() {
+        Student s = new Student();
+        s.setId(1L);
+        s.setStudentNo("2301132013");
+        s.setName("张三");
+        return s;
+    }
+
+    private WarningRecord stubWarning() {
+        WarningRecord w = new WarningRecord();
+        w.setId(10L);
+        w.setWarningNo("W20261001");
+        w.setStudentId(1L);
+        w.setWarningLevel(3);
+        w.setWarningType("ACADEMIC");
+        w.setTitle("期中成绩下滑预警");
+        w.setTriggerDetail("期中考试 2 门不及格，出勤下降");
+        w.setRiskProbability(new BigDecimal("0.78"));
+        return w;
+    }
+
+    private void stubEmptyLearningData() {
+        when(scoreMapper.selectList(any())).thenReturn(List.of());
+        when(attendanceMapper.selectList(any())).thenReturn(List.of());
+        when(onlineBehaviorMapper.selectList(any())).thenReturn(List.of());
+        when(predictionResultMapper.selectList(any())).thenReturn(List.of());
+        when(warningRecordMapper.selectList(any())).thenReturn(List.of());
+    }
+
+    @Test
+    @DisplayName("① 预警周报：模型不可用时降级为规则化周报")
+    void testWeeklyReportFallback() {
+        BigScreenVO vo = new BigScreenVO();
+        BigScreenVO.Overview ov = new BigScreenVO.Overview();
+        ov.setStudentCount(200L);
+        ov.setActiveWarning(12L);
+        ov.setSevereWarning(3L);
+        ov.setOpenTicket(5L);
+        vo.setOverview(ov);
+        BigScreenVO.TrendItem t = new BigScreenVO.TrendItem();
+        t.setWeek("09-14");
+        t.setCount(4L);
+        vo.setWarningTrend(new ArrayList<>(List.of(t)));
+        vo.setWarningLevelDist(new ArrayList<>());
+        vo.setWarningTypeDist(new ArrayList<>());
+        vo.setCollegeRanking(new ArrayList<>());
+        vo.setLatestWarnings(new ArrayList<>());
+        vo.setLatestTickets(new ArrayList<>());
+        when(bigScreenService.overview()).thenReturn(vo);
+
+        AiAnalysisService.AiResult res = service.generateWeeklyReport(1L);
+        assertEquals("FALLBACK", res.getStatus());
+        assertTrue(res.getContent().contains("规则化预警周报"));
+        assertTrue(res.getContent().contains("待处理预警 12"));
+        assertTrue(res.getContent().contains("管理建议"));
+    }
+
+    @Test
+    @DisplayName("② 干预方案：模型不可用时降级为规则化方案")
+    void testInterventionPlanFallback() {
+        when(warningRecordMapper.selectById(10L)).thenReturn(stubWarning());
+        when(studentMapper.selectById(1L)).thenReturn(stubStudent());
+        stubEmptyLearningData();
+
+        AiAnalysisService.AiResult res = service.generateInterventionPlan(10L, 1L);
+        assertEquals("FALLBACK", res.getStatus());
+        assertTrue(res.getContent().contains("干预目标"));
+        assertTrue(res.getContent().contains("期中成绩下滑预警"));
+    }
+
+    @Test
+    @DisplayName("③ 自然语言查学情：风险类问题路由到规则查询")
+    void testQueryRiskFallback() {
+        stubEmptyLearningData();
+        when(studentMapper.selectCount(any())).thenReturn(200L);
+        when(termMapper.selectOne(any())).thenReturn(null);
+
+        AiAnalysisService.AiResult res = service.answerLearningQuery("哪些学生有挂科风险？", 1L);
+        assertEquals("FALLBACK", res.getStatus());
+        assertTrue(res.getContent().contains("待处理预警前 5") || res.getContent().contains("当前无待处理预警"));
+    }
+
+    @Test
+    @DisplayName("④ 成绩单评语：模型不可用时降级为规则化评语")
+    void testCommentFallback() {
+        when(studentMapper.selectById(1L)).thenReturn(stubStudent());
+        com.gyb.xqfx.entity.Score s1 = new com.gyb.xqfx.entity.Score();
+        s1.setStudentId(1L);
+        s1.setTotalScore(new BigDecimal("82"));
+        com.gyb.xqfx.entity.Score s2 = new com.gyb.xqfx.entity.Score();
+        s2.setStudentId(1L);
+        s2.setTotalScore(new BigDecimal("66"));
+        when(scoreMapper.selectList(any())).thenReturn(List.of(s1, s2));
+        when(attendanceMapper.selectList(any())).thenReturn(List.of());
+        when(onlineBehaviorMapper.selectList(any())).thenReturn(List.of());
+        when(predictionResultMapper.selectList(any())).thenReturn(List.of());
+        when(warningRecordMapper.selectList(any())).thenReturn(List.of());
+
+        AiAnalysisService.AiResult res = service.generateComment(1L, null, 1L);
+        assertEquals("FALLBACK", res.getStatus());
+        assertEquals("张三", res.getStudentName());
+        assertTrue(res.getContent().contains("张三"));
+        assertTrue(res.getContent().contains("亮点") || res.getContent().contains("建议"));
+    }
+
+    @Test
+    @DisplayName("⑤ 家长通知：模型不可用时降级为规则化通知")
+    void testParentNoticeFallback() {
+        when(warningRecordMapper.selectById(10L)).thenReturn(stubWarning());
+        when(studentMapper.selectById(1L)).thenReturn(stubStudent());
+        stubEmptyLearningData();
+
+        AiAnalysisService.AiResult res = service.generateParentNotice(10L, 1L);
+        assertEquals("FALLBACK", res.getStatus());
+        assertTrue(res.getContent().contains("尊敬的家长"));
+        assertTrue(res.getContent().contains("张三"));
     }
 }

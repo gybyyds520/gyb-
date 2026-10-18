@@ -16,6 +16,7 @@
               <el-option label="智能问答" value="CHAT" />
               <el-option label="学情报告" value="REPORT" />
               <el-option label="改进建议" value="ADVICE" />
+              <el-option label="学情数据问答" value="NL_QUERY" />
             </el-select>
             <el-button size="small" @click="newSession">新会话</el-button>
           </div>
@@ -57,7 +58,7 @@
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { agentChatStream } from '@/api/ai'
+import { agentChatStream, learningQuery } from '@/api/ai'
 import { pageStudents } from '@/api/student'
 import { listBase } from '@/api/base'
 
@@ -77,7 +78,9 @@ const QUICK = [
   { scene: 'REPORT', label: '生成学情报告', type: 'primary' },
   { scene: 'ADVICE', label: '个性化改进建议', type: 'success' },
   { scene: 'CHAT', label: '预警原因分析', type: 'warning' },
-  { scene: 'CHAT', label: '偏科成因解读', type: 'danger' }
+  { scene: 'CHAT', label: '偏科成因解读', type: 'danger' },
+  { scene: 'NL_QUERY', label: '哪些学生有挂科风险？', type: 'info' },
+  { scene: 'NL_QUERY', label: '优秀学生排名', type: 'info' }
 ]
 
 const storageKey = 'xqfx_agent_sessions'
@@ -134,6 +137,8 @@ async function sendQuick(q) {
     draft.value = q.label === '预警原因分析'
       ? '请分析该生当前学业预警的主要原因，并结合学情给出建议。'
       : '请分析该生偏科成因，说明强项与弱项的差距及改进方向。'
+  } else if (q.scene === 'NL_QUERY') {
+    draft.value = q.label
   } else {
     draft.value = ''
   }
@@ -143,11 +148,11 @@ async function sendQuick(q) {
 async function send() {
   if (streaming.value) return
   const text = draft.value.trim()
-  if (scene.value !== 'CHAT' && userStore.isStaff && !studentId.value) {
+  if (scene.value !== 'CHAT' && scene.value !== 'NL_QUERY' && userStore.isStaff && !studentId.value) {
     ElMessage.warning('请先选择学生')
     return
   }
-  if (scene.value === 'CHAT' && !text) {
+  if ((scene.value === 'CHAT' || scene.value === 'NL_QUERY') && !text) {
     ElMessage.warning('请输入问题')
     return
   }
@@ -158,6 +163,21 @@ async function send() {
   streaming.value = true
   await nextTick()
   scrollBottom()
+
+  if (scene.value === 'NL_QUERY') {
+    try {
+      const res = await learningQuery(text)
+      botMsg.text = res?.content || '（无返回内容）'
+      botMsg.meta = { model: res?.model || 'rule-based', totalTokens: res?.totalTokens }
+      streaming.value = false
+      persist()
+      scrollBottom()
+    } catch (e) {
+      botMsg.error = '查询失败：' + (e?.message || e)
+      streaming.value = false
+    }
+    return
+  }
 
   agentChatStream({
     scene: scene.value,

@@ -43,6 +43,17 @@
       </div>
     </div>
 
+    <!-- AI 预警周报 -->
+    <div class="panel weekly-panel">
+      <div class="panel-title">
+        AI 预警周报 · 本周全校预警态势智能解读
+        <el-button size="small" type="primary" :loading="weeklyLoading" @click="loadWeeklyReport"
+                   style="margin-left: 12px">{{ weeklyReport ? '重新生成' : '生成周报' }}</el-button>
+      </div>
+      <div v-if="weeklyReport" class="weekly-report">{{ weeklyReport }}</div>
+      <el-empty v-else description="由本地大模型聚合本周预警趋势、等级/类型分布与学院排行，生成可汇报的文字周报" :image-size="50" />
+    </div>
+
     <el-tabs v-model="activeTab" class="main-tabs">
       <!-- Tab 1：最新动态 -->
       <el-tab-pane label="最新动态" name="latest">
@@ -217,6 +228,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { monitorOverview, monitorLatest, monitorRecords, monitorAccounts, monitorAccount, monitorDeleteAccount } from '@/api/monitor'
+import { generateWeeklyReport } from '@/api/ai'
 
 const overview = ref(null)
 const latest = ref(null)
@@ -224,6 +236,22 @@ const loading = ref(false)
 const autoRefresh = ref(true)
 const activeTab = ref('latest')
 const latestTab = ref('warnings')
+
+// AI 周报
+const weeklyReport = ref('')
+const weeklyLoading = ref(false)
+async function loadWeeklyReport() {
+  weeklyLoading.value = true
+  try {
+    const res = await generateWeeklyReport()
+    weeklyReport.value = res?.content || '（无内容）'
+    ElMessage.success(`周报已生成（${res?.model || '本地模型'}）`)
+  } catch (e) {
+    ElMessage.error('周报生成失败：' + (e?.message || e))
+  } finally {
+    weeklyLoading.value = false
+  }
+}
 
 // 全量记录
 const recordDims = [
@@ -346,6 +374,23 @@ onUnmounted(() => {
 .head-right {
   display: flex;
   align-items: center;
+}
+
+.weekly-panel {
+  margin-bottom: 12px;
+}
+
+.weekly-report {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 13px;
+  max-height: 340px;
+  overflow: auto;
+  background: #f8fafc;
+  border: 1px solid #e5e9f0;
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: #2c3e50;
 }
 
 .kpi-row {

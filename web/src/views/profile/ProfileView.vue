@@ -80,6 +80,12 @@
           <el-button size="small" type="warning" plain style="margin-left: 10px" :loading="biasAttrLoading" @click="doBiasAttribution">
             AI 归因解读
           </el-button>
+          <el-button size="small" type="primary" plain style="margin-left: 10px" :loading="commentLoading" @click="doComment">
+            AI 评语
+          </el-button>
+          <el-button size="small" type="success" plain style="margin-left: 10px" :loading="reportLoading" @click="doExportReport">
+            导出报告摘要
+          </el-button>
         </div>
         <el-row v-if="bias" :gutter="16" class="bias-summary">
           <el-col :span="8">
@@ -134,6 +140,35 @@
         <el-button type="primary" :loading="biasAttrLoading" @click="doBiasAttribution">重新生成</el-button>
       </template>
     </el-dialog>
+
+    <!-- 成绩单 AI 评语 -->
+    <el-dialog v-model="commentVisible" title="成绩单 AI 评语" width="640px">
+      <div v-loading="commentLoading" class="attr-body">
+        <el-empty v-if="!commentLoading && !commentContent" description="点击「AI 评语」生成学期个性化评语" :image-size="60" />
+        <div v-if="commentContent" class="attr-content">{{ commentContent }}</div>
+        <div v-if="commentModel" class="attr-model">模型：{{ commentModel }}</div>
+      </div>
+      <template #footer>
+        <el-button @click="commentVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="commentLoading" @click="doComment">重新生成</el-button>
+        <el-button type="success" :disabled="!commentContent" @click="copyText(commentContent)">复制评语</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 学情报告导出摘要 -->
+    <el-dialog v-model="reportVisible" title="学情报告导出（AI 摘要）" width="720px">
+      <div v-loading="reportLoading" class="attr-body">
+        <el-empty v-if="!reportLoading && !reportContent" description="点击「导出报告摘要」生成可下载的学情分析报告" :image-size="60" />
+        <div v-if="reportContent" class="attr-content">{{ reportContent }}</div>
+        <div v-if="reportModel" class="attr-model">模型：{{ reportModel }}</div>
+      </div>
+      <template #footer>
+        <el-button @click="reportVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="reportLoading" @click="doExportReport">重新生成</el-button>
+        <el-button type="success" :disabled="!reportContent" @click="copyText(reportContent)">复制全文</el-button>
+        <el-button type="warning" :disabled="!reportContent" @click="downloadReport">下载 .md</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -143,6 +178,7 @@ import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { getProfile, generateProfile, getSnapshots, getBias, biasAttribution } from '@/api/profile'
+import { generateComment, generateReport } from '@/api/ai'
 import { warningTimeline } from '@/api/warning'
 import { pageStudents } from '@/api/student'
 import { listBase } from '@/api/base'
@@ -220,6 +256,66 @@ async function doBiasAttribution() {
   } finally {
     biasAttrLoading.value = false
   }
+}
+
+/** 成绩单 AI 评语 */
+const commentVisible = ref(false)
+const commentLoading = ref(false)
+const commentContent = ref('')
+const commentModel = ref('')
+async function doComment() {
+  if (!studentId.value) return
+  commentLoading.value = true
+  try {
+    const res = await generateComment({ studentId: studentId.value, termId: termId.value })
+    commentContent.value = res?.content || '（无返回内容）'
+    commentModel.value = res?.model || ''
+    commentVisible.value = true
+  } catch (e) {
+    ElMessage.error('评语生成失败：' + (e?.message || e))
+  } finally {
+    commentLoading.value = false
+  }
+}
+
+/** 学情报告导出摘要 */
+const reportVisible = ref(false)
+const reportLoading = ref(false)
+const reportContent = ref('')
+const reportModel = ref('')
+async function doExportReport() {
+  if (!studentId.value) return
+  reportLoading.value = true
+  try {
+    const res = await generateReport({ studentId: studentId.value, termId: termId.value })
+    reportContent.value = res?.content || '（无返回内容）'
+    reportModel.value = res?.model || ''
+    reportVisible.value = true
+  } catch (e) {
+    ElMessage.error('报告生成失败：' + (e?.message || e))
+  } finally {
+    reportLoading.value = false
+  }
+}
+
+function copyText(text) {
+  navigator.clipboard?.writeText(text || '').then(
+    () => ElMessage.success('已复制到剪贴板'),
+    () => ElMessage.warning('复制失败，请手动选择复制')
+  )
+}
+
+function downloadReport() {
+  const content = reportContent.value || ''
+  const name = '学情报告_' + studentId.value + '_' + new Date().toISOString().slice(0, 10) + '.md'
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('报告已下载：' + name)
 }
 
 /** 加载成长档案时间轴：画像快照 + 预警/干预/成绩/考勤事件，按时间倒序合并 */

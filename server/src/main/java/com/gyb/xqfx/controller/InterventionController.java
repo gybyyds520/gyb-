@@ -1,11 +1,14 @@
 package com.gyb.xqfx.controller;
 
 import com.gyb.xqfx.annotation.Audit;
+import com.gyb.xqfx.annotation.RequireRole;
 import com.gyb.xqfx.common.Result;
 import com.gyb.xqfx.entity.InterventionLog;
 import com.gyb.xqfx.entity.InterventionTicket;
 import com.gyb.xqfx.model.vo.InterventionTicketVO;
 import com.gyb.xqfx.model.vo.TicketSlaVO;
+import com.gyb.xqfx.security.SecurityUtils;
+import com.gyb.xqfx.service.AiAnalysisService;
 import com.gyb.xqfx.service.InterventionService;
 import com.gyb.xqfx.service.TicketSlaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +32,15 @@ public class InterventionController {
 
     private final InterventionService interventionService;
     private final TicketSlaService ticketSlaService;
+    private final AiAnalysisService aiAnalysisService;
+
+    @Operation(summary = "AI 生成干预帮扶方案（教师确认后可用于创建工单）")
+    @PostMapping("/ai-plan/{warningId}")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
+    public Result<AiAnalysisService.AiResult> aiPlan(@PathVariable Long warningId) {
+        return Result.success(
+                aiAnalysisService.generateInterventionPlan(warningId, SecurityUtils.currentUserId()));
+    }
 
     @Operation(summary = "干预工单列表")
     @GetMapping("/tickets")

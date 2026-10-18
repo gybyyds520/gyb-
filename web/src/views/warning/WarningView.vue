@@ -78,11 +78,13 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="340" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openHandle(row)">处理</el-button>
             <el-button link type="success" size="small" @click="emitIntervene(row)">建单</el-button>
             <el-button link type="warning" size="small" @click="openAttribution(row)">AI归因</el-button>
+            <el-button link type="primary" size="small" @click="openAiPlan(row)">AI方案</el-button>
+            <el-button link type="success" size="small" @click="openParentNotice(row)">家长通知</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -108,6 +110,34 @@
       <template #footer>
         <el-button @click="attrDialogVisible = false">关闭</el-button>
         <el-button type="primary" :loading="attrLoading" :disabled="!attrRow" @click="doAttribution">重新生成</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- AI 干预帮扶方案 -->
+    <el-dialog v-model="planDialogVisible" title="AI 干预帮扶方案" width="680px">
+      <div v-loading="planLoading" class="attr-body">
+        <el-empty v-if="!planLoading && !planContent" description="点击「AI方案」生成帮扶措施（含排期/沟通话术/家校协同）" :image-size="60" />
+        <div v-if="planContent" class="attr-content">{{ planContent }}</div>
+        <div v-if="planModel" class="attr-model">模型：{{ planModel }}</div>
+      </div>
+      <template #footer>
+        <el-button @click="planDialogVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="planLoading" :disabled="!planRow" @click="doAiPlan">重新生成</el-button>
+        <el-button type="success" :disabled="!planContent" :loading="creating" @click="createTicketFromPlan">以此方案创建工单</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 家长沟通通知 -->
+    <el-dialog v-model="noticeDialogVisible" title="家长沟通通知（AI 文案）" width="680px">
+      <div v-loading="noticeLoading" class="attr-body">
+        <el-empty v-if="!noticeLoading && !noticeContent" description="点击「家长通知」生成家长易懂的沟通文案" :image-size="60" />
+        <div v-if="noticeContent" class="attr-content">{{ noticeContent }}</div>
+        <div v-if="noticeModel" class="attr-model">模型：{{ noticeModel }}</div>
+      </div>
+      <template #footer>
+        <el-button @click="noticeDialogVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="noticeLoading" :disabled="!noticeRow" @click="doParentNotice">重新生成</el-button>
+        <el-button type="success" :disabled="!noticeContent" :loading="sending" @click="sendParentNotice">生成并发送给家长</el-button>
       </template>
     </el-dialog>
 
@@ -230,6 +260,8 @@ import {
   deleteWarningRule,
   warningAttribution
 } from '@/api/warning'
+import { generateInterventionPlan, generateParentNotice } from '@/api/ai'
+import { createTicket } from '@/api/intervention'
 import { listBase } from '@/api/base'
 
 const LEVELS = [
@@ -372,6 +404,98 @@ async function doAttribution() {
     attrModel.value = res?.model || ''
   } finally {
     attrLoading.value = false
+  }
+}
+
+/** ---------- AI 干预帮扶方案 ---------- */
+const planDialogVisible = ref(false)
+const planLoading = ref(false)
+const planRow = ref(null)
+const planContent = ref('')
+const planModel = ref('')
+const creating = ref(false)
+
+function openAiPlan(row) {
+  planRow.value = row
+  planContent.value = ''
+  planModel.value = ''
+  planDialogVisible.value = true
+  doAiPlan()
+}
+
+async function doAiPlan() {
+  if (!planRow.value) return
+  planLoading.value = true
+  try {
+    const res = await generateInterventionPlan(planRow.value.id)
+    planContent.value = res?.content || '（无返回内容）'
+    planModel.value = res?.model || ''
+  } catch (e) {
+    ElMessage.error('方案生成失败：' + (e?.message || e))
+  } finally {
+    planLoading.value = false
+  }
+}
+
+async function createTicketFromPlan() {
+  if (!planRow.value || !planContent.value) return
+  creating.value = true
+  try {
+    await createTicket({ warningId: planRow.value.id, plan: planContent.value })
+    ElMessage.success('工单已创建，AI 方案已写入干预计划')
+    planDialogVisible.value = false
+  } catch (e) {
+    ElMessage.error('建单失败：' + (e?.message || e))
+  } finally {
+    creating.value = false
+  }
+}
+
+/** ---------- 家长沟通通知 ---------- */
+const noticeDialogVisible = ref(false)
+const noticeLoading = ref(false)
+const noticeRow = ref(null)
+const noticeContent = ref('')
+const noticeModel = ref('')
+const sending = ref(false)
+
+function openParentNotice(row) {
+  noticeRow.value = row
+  noticeContent.value = ''
+  noticeModel.value = ''
+  noticeDialogVisible.value = true
+  doParentNotice()
+}
+
+async function doParentNotice() {
+  if (!noticeRow.value) return
+  noticeLoading.value = true
+  try {
+    const res = await generateParentNotice(noticeRow.value.id, false)
+    const r = res?.result || res
+    noticeContent.value = r?.content || '（无返回内容）'
+    noticeModel.value = r?.model || ''
+  } catch (e) {
+    ElMessage.error('文案生成失败：' + (e?.message || e))
+  } finally {
+    noticeLoading.value = false
+  }
+}
+
+async function sendParentNotice() {
+  if (!noticeRow.value || !noticeContent.value) return
+  sending.value = true
+  try {
+    const res = await generateParentNotice(noticeRow.value.id, true)
+    if (res?.sent) {
+      ElMessage.success('已发送给家长端（站内通知）')
+    } else {
+      ElMessage.warning('该学生暂未绑定家长，未发送通知')
+    }
+  } catch (e) {
+    ElMessage.error('发送失败：' + (e?.message || e))
+  } finally {
+    sending.value = false
   }
 }
 

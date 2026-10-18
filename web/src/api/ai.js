@@ -20,6 +20,31 @@ export function generateAdvice(params) {
   return request.post('/ai/advice', null, { params })
 }
 
+/** ① 预警工作周报（AI 聚合解读） */
+export function generateWeeklyReport() {
+  return request.post('/ai/weekly-report')
+}
+
+/** ③ 自然语言查学情（NL2Query） */
+export function learningQuery(question) {
+  return request.post('/ai/query', null, { params: { question } })
+}
+
+/** ④ 成绩单 AI 评语 */
+export function generateComment(params) {
+  return request.post('/ai/comment', null, { params })
+}
+
+/** ⑤ 家长沟通通知文案（可选发送） */
+export function generateParentNotice(warningId, send = false) {
+  return request.post(`/ai/parent-notice/${warningId}`, null, { params: { send } })
+}
+
+/** ② AI 干预帮扶方案 */
+export function generateInterventionPlan(warningId) {
+  return request.post(`/intervention/ai-plan/${warningId}`)
+}
+
 /** 知识库列表 */
 export function listKnowledge() {
   return request.get('/ai/knowledge')

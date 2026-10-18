@@ -12,6 +12,7 @@ import com.gyb.xqfx.entity.Score;
 import com.gyb.xqfx.entity.Student;
 import com.gyb.xqfx.entity.Term;
 import com.gyb.xqfx.entity.WarningRecord;
+import com.gyb.xqfx.model.vo.BigScreenVO;
 import com.gyb.xqfx.mapper.AiCallLogMapper;
 import com.gyb.xqfx.mapper.AiPromptTemplateMapper;
 import com.gyb.xqfx.mapper.AttendanceMapper;
@@ -52,6 +53,11 @@ public class AiAnalysisService {
     private static final String SCENE_ADVICE = "ADVICE";
     private static final String SCENE_CHAT = "CHAT";
     private static final String SCENE_ATTRIBUTION = "ATTRIBUTION";
+    private static final String SCENE_WEEKLY_REPORT = "WEEKLY_REPORT";
+    private static final String SCENE_INTERVENTION = "INTERVENTION_PLAN";
+    private static final String SCENE_NL_QUERY = "NL_QUERY";
+    private static final String SCENE_COMMENT = "COMMENT";
+    private static final String SCENE_PARENT_NOTICE = "PARENT_NOTICE";
 
     private static final String DEFAULT_REPORT_TEMPLATE =
             "你是高校学业分析师。请基于以下学情数据，生成一份结构化的学情分析报告，"
@@ -66,6 +72,30 @@ public class AiAnalysisService {
                     + "1 现象概述（发生了什么）；2 可能成因（结合数据证据，列出 2~4 条，区分主因与次要因素）；"
                     + "3 佐证与反证（哪些数据支持该判断）；4 干预建议（按优先级给出 2~3 条可执行措施）。\n"
                     + "输出使用中文，条理清晰，只依据给定数据，不得编造。\n\n{context}";
+    private static final String DEFAULT_WEEKLY_REPORT_TEMPLATE =
+            "你是校级学情管理分析师。请基于以下本周预警数据，生成一份预警工作周报，输出要求：\n"
+                    + "1 本周总体态势（预警总量、变化趋势）；2 高发预警等级与类型；3 重点学院与班级；"
+                    + "4 典型预警案例；5 下步管理建议（按优先级 3~5 条）。\n"
+                    + "输出使用中文，条理清晰，只依据给定数据，不得编造。\n\n{context}";
+    private static final String DEFAULT_INTERVENTION_TEMPLATE =
+            "你是高校辅导员/学业帮扶专家。请针对该学生的预警问题，制定一份可执行的干预帮扶方案，输出要求：\n"
+                    + "1 问题诊断（该生当前面临的核心问题与数据依据）；2 干预目标（1~2 个可衡量目标）；"
+                    + "3 具体措施（按周排期 4~6 条，注明由谁执行）；4 沟通话术（首次约谈参考话术）；"
+                    + "5 家校协同（是否需要通知家长及配合事项）；6 效果评估（评估时间点与指标）。\n"
+                    + "输出使用中文，具体可落地，只依据给定数据。\n\n{context}";
+    private static final String DEFAULT_NL_QUERY_TEMPLATE =
+            "你是高校学情数据问答助手。以下是根据用户问题检索到的学情数据，请组织一段自然语言回答：\n"
+                    + "1 直接给出结论（谁/多少/如何）；2 用数据佐证；3 给出 1~2 条简短建议。\n"
+                    + "回答控制在 200 字内，通俗易懂，只依据给定数据，不得编造。\n\n用户问题：{question}\n\n检索数据：\n{context}";
+    private static final String DEFAULT_COMMENT_TEMPLATE =
+            "你是班主任/学业导师。请基于该学生的成绩、出勤与学习行为数据，撰写一份学期评语，输出要求：\n"
+                    + "1 总体印象（2~3 句）；2 亮点与进步；3 存在的不足；4 下学期的期望与建议（2~3 条）。\n"
+                    + "语气亲切、鼓励为主、具体到数据，避免空泛套话，只依据给定数据。\n\n{context}";
+    private static final String DEFAULT_PARENT_NOTICE_TEMPLATE =
+            "你是学校辅导员。请基于以下预警信息和学生数据，撰写一份给家长的沟通通知，输出要求：\n"
+                    + "1 称呼与问候；2 用通俗易懂的语言说明孩子近期情况（不堆砌专业术语，数据用大白话解释）；"
+                    + "3 说明学校已经或即将采取的措施；4 请家长配合的事项（2~3 条）；5 结尾与联系方式占位。\n"
+                    + "语气温和、尊重家长、具体可执行，只依据给定数据，不得编造。\n\n{context}";
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{(\\w+)}");
 
@@ -82,6 +112,7 @@ public class AiAnalysisService {
     private final ReportRecordMapper reportRecordMapper;
     private final OllamaClient ollamaClient;
     private final KnowledgeService knowledgeService;
+    private final BigScreenService bigScreenService;
 
     @Value("${xqfx.ollama.enabled:true}")
     private boolean llmEnabled;
@@ -256,6 +287,150 @@ public class AiAnalysisService {
     // ==================== 上下文与模板 ====================
 
     /**
+     * 通用模型调用骨架：成功路径 + 规则化降级 + 调用审计
+     */
+    private AiResult callAi(String scene, String system, String prompt, Long bizId, Long userId,
+                            java.util.function.Supplier<String> ruleFallback) {
+        long start = System.currentTimeMillis();
+        AiResult result = new AiResult();
+        if (llmEnabled) {
+            OllamaClient.ChatResult chat = ollamaClient.chat(system, prompt);
+            if (chat != null) {
+                result.content = chat.content;
+                result.model = chat.model;
+                result.status = "SUCCESS";
+                result.totalTokens = chat.totalTokens();
+                logCall(scene, bizId, chat.model, templateId(scene),
+                        chat.promptTokens, chat.completionTokens,
+                        (int) (System.currentTimeMillis() - start), "SUCCESS", null, userId);
+                return result;
+            }
+        }
+        result.model = "rule-based";
+        result.status = fallbackToRule ? "FALLBACK" : "FAILED";
+        result.content = fallbackToRule ? ruleFallback.get()
+                : "大模型服务不可用，且未开启规则化降级。";
+        logCall(scene, bizId, "rule-based", templateId(scene), 0, 0,
+                (int) (System.currentTimeMillis() - start), result.status, "模型不可用", userId);
+        return result;
+    }
+
+    /**
+     * ① 预警工作周报：聚合全校预警态势生成文字周报
+     */
+    public AiResult generateWeeklyReport(Long userId) {
+        BigScreenVO vo = bigScreenService.overview();
+        StringBuilder ctx = new StringBuilder();
+        ctx.append("本周预警总量：").append(vo.getWarningTrend().stream().mapToLong(BigScreenVO.TrendItem::getCount).sum())
+                .append(" 条；待处理预警 ").append(vo.getOverview().getActiveWarning())
+                .append(" 条，高危 ").append(vo.getOverview().getSevereWarning())
+                .append(" 条，进行中工单 ").append(vo.getOverview().getOpenTicket()).append(" 条。\n");
+        ctx.append("近 8 周趋势：");
+        vo.getWarningTrend().forEach(t -> ctx.append(t.getWeek()).append("=").append(t.getCount()).append("，"));
+        ctx.append("\n等级分布：");
+        vo.getWarningLevelDist().forEach(n -> ctx.append(n.getName()).append(n.getValue()).append("，"));
+        ctx.append("\n类型分布：");
+        vo.getWarningTypeDist().forEach(n -> ctx.append(n.getName()).append(n.getValue()).append("，"));
+        ctx.append("\n学院排行：");
+        vo.getCollegeRanking().forEach(r -> ctx.append(r.getCollegeName()).append("(预警")
+                .append(r.getWarningCount()).append("/高危").append(r.getSevereCount()).append(")，"));
+        ctx.append("\n最新预警案例：");
+        vo.getLatestWarnings().forEach(w -> ctx.append(w.getStudentName()).append("：")
+                .append(w.getTitle()).append("；"));
+
+        String prompt = renderTemplate(loadTemplate(SCENE_WEEKLY_REPORT, DEFAULT_WEEKLY_REPORT_TEMPLATE),
+                Map.of("context", ctx.toString()));
+        return callAi(SCENE_WEEKLY_REPORT, "你是严谨、客观的校级学情管理分析师，输出中文。",
+                prompt, null, userId,
+                () -> "【本地大模型暂不可用，以下为规则化预警周报】\n\n"
+                        + ctx + "\n\n管理建议：1. 优先处置红色/橙色预警；2. 对预警集中的学院开展专项分析；3. 跟进进行中工单，避免超时。");
+    }
+
+    /**
+     * ② AI 干预帮扶方案：预警 → 方案文本，教师确认后落工单
+     */
+    public AiResult generateInterventionPlan(Long warningId, Long userId) {
+        WarningRecord w = warningRecordMapper.selectById(warningId);
+        if (w == null) {
+            throw new IllegalArgumentException("预警不存在：" + warningId);
+        }
+        StudentContext ctx = loadContext(w.getStudentId(), w.getTermId());
+        String context = "预警编号：" + w.getWarningNo() + "；类型：" + w.getWarningType()
+                + "；等级：" + levelText(w.getWarningLevel()) + "；标题：" + w.getTitle()
+                + "；触发详情：" + w.getTriggerDetail()
+                + "；风险概率：" + (w.getRiskProbability() == null ? "-" : w.getRiskProbability().toPlainString())
+                + "\n\n" + ctx.toText();
+        String prompt = renderTemplate(loadTemplate(SCENE_INTERVENTION, DEFAULT_INTERVENTION_TEMPLATE),
+                Map.of("context", context));
+        return callAi(SCENE_INTERVENTION, "你是经验丰富的高校辅导员，方案要具体、可执行、有排期。",
+                prompt, warningId, userId,
+                () -> "【本地大模型暂不可用，以下为规则化干预方案】\n\n"
+                        + "问题诊断：该生" + levelText(w.getWarningLevel()) + "预警（" + w.getTitle() + "），"
+                        + (ctx.failCount > 0 ? "存在 " + ctx.failCount + " 门不及格课程；" : "")
+                        + (ctx.attendanceRate < 0.85 ? "出勤率 " + String.format("%.1f%%", ctx.attendanceRate * 100) + " 偏低；" : "")
+                        + "预测风险概率 " + String.format("%.2f", ctx.riskProbability) + "。\n"
+                        + "干预目标：两周内与辅导员完成首次约谈，制定学业提升计划。\n"
+                        + "措施：1. 本周内约谈学生了解原因并记录；2. 联系任课教师梳理薄弱点；"
+                        + "3. 每周跟踪考勤与作业提交；4. 月末评估进展。\n"
+                        + "家校协同：必要时通知家长，请家长配合督促。");
+    }
+
+    /**
+     * ③ 自然语言查学情：意图规则路由 + 数据检索 + AI 组织回答
+     */
+    public AiResult answerLearningQuery(String question, Long userId) {
+        String context = buildQueryContext(question);
+        String prompt = renderTemplate(loadTemplate(SCENE_NL_QUERY, DEFAULT_NL_QUERY_TEMPLATE),
+                Map.of("question", question, "context", context));
+        return callAi(SCENE_NL_QUERY, "你是严谨的高校学情数据问答助手，回答通俗、有数据依据。",
+                prompt, null, userId,
+                () -> "【本地大模型暂不可用，以下为规则化查询结果】\n\n" + context);
+    }
+
+    /**
+     * ④ 成绩单 AI 评语
+     */
+    public AiResult generateComment(Long studentId, Long termId, Long userId) {
+        StudentContext ctx = loadContext(studentId, termId);
+        String prompt = renderTemplate(loadTemplate(SCENE_COMMENT, DEFAULT_COMMENT_TEMPLATE),
+                Map.of("context", ctx.toText()));
+        AiResult result = callAi(SCENE_COMMENT, "你是亲切、专业的班主任，评语鼓励为主、具体到数据。",
+                prompt, studentId, userId,
+                () -> buildRuleBasedComment(ctx));
+        result.studentName = ctx.studentName;
+        return result;
+    }
+
+    /**
+     * ⑤ 家长沟通通知：预警 → 家长易懂文案
+     */
+    public AiResult generateParentNotice(Long warningId, Long userId) {
+        WarningRecord w = warningRecordMapper.selectById(warningId);
+        if (w == null) {
+            throw new IllegalArgumentException("预警不存在：" + warningId);
+        }
+        StudentContext ctx = loadContext(w.getStudentId(), w.getTermId());
+        String context = "预警类型：" + w.getWarningType() + "；等级：" + levelText(w.getWarningLevel())
+                + "；标题：" + w.getTitle() + "；触发详情：" + w.getTriggerDetail()
+                + "\n\n" + ctx.toText();
+        String prompt = renderTemplate(loadTemplate(SCENE_PARENT_NOTICE, DEFAULT_PARENT_NOTICE_TEMPLATE),
+                Map.of("context", context));
+        return callAi(SCENE_PARENT_NOTICE, "你是温和、尊重家长的高校辅导员，文案通俗、具体、有温度。",
+                prompt, warningId, userId,
+                () -> "【本地大模型暂不可用，以下为规则化家长通知】\n\n"
+                        + "尊敬的家长：您好！\n"
+                        + "近期我们关注到" + ctx.studentName + "同学在学业上遇到一些情况："
+                        + w.getTitle() + "（" + levelText(w.getWarningLevel()) + "预警）。"
+                        + (ctx.failCount > 0 ? "目前有 " + ctx.failCount + " 门课程成绩不理想。" : "")
+                        + "学校已安排辅导员跟进，正在制定帮扶计划。\n"
+                        + "希望家长能：1. 多与孩子沟通，了解学习上的困难；2. 协助督促孩子按时上课、完成作业；"
+                        + "3. 如有需要，随时联系辅导员（电话：请补充）。\n"
+                        + "让我们一起帮助孩子尽快回到正常学习轨道。");
+    }
+
+    // ==================== 上下文与模板 ====================
+
+    /**
      * 组装学生学情上下文
      */
     public StudentContext loadContext(Long studentId, Long termId) {
@@ -375,6 +550,133 @@ public class AiAnalysisService {
     }
 
     // ==================== 规则化兜底 ====================
+
+    /**
+     * 意图关键词匹配
+     */
+    private boolean matches(String text, String... keywords) {
+        for (String k : keywords) {
+            if (text.contains(k)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String levelText(Integer level) {
+        if (level == null) {
+            return "未知";
+        }
+        return switch (level) {
+            case 4 -> "红色";
+            case 3 -> "橙色";
+            case 2 -> "黄色";
+            default -> "蓝色";
+        };
+    }
+
+    /**
+     * 规则化评语
+     */
+    private String buildRuleBasedComment(StudentContext ctx) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ctx.studentName).append("同学本学期整体表现");
+        sb.append(ctx.avgScore >= 85 ? "优异" : ctx.avgScore >= 75 ? "良好" : ctx.avgScore >= 60 ? "平稳" : "需要关注")
+                .append("，共修读 ").append(ctx.courseCount).append(" 门课程，平均成绩 ")
+                .append(String.format("%.1f", ctx.avgScore)).append(" 分。\n\n");
+        sb.append("亮点：");
+        if (ctx.attendanceRate >= 0.9) {
+            sb.append("出勤积极（").append(String.format("%.1f%%", ctx.attendanceRate * 100)).append("），");
+        }
+        if (ctx.studyMinutes > 600) {
+            sb.append("在线学习投入充足（累计 ").append(ctx.studyMinutes).append(" 分钟），");
+        }
+        sb.append("最高分达到 ").append(String.format("%.1f", ctx.maxScore)).append(" 分。\n\n");
+        sb.append("不足：");
+        if (ctx.failCount > 0) {
+            sb.append(ctx.failCount).append(" 门课程不及格，");
+        }
+        if (ctx.attendanceRate < 0.85) {
+            sb.append("出勤率偏低，");
+        }
+        sb.append("学习上仍有提升空间。\n\n下学期建议：");
+        sb.append(buildRuleBasedAdvice(ctx));
+        return sb.toString();
+    }
+
+    /**
+     * 自然语言查询的意图识别与数据检索（规则兜底，不让模型直接写 SQL）
+     */
+    private String buildQueryContext(String question) {
+        if (question == null || question.isBlank()) {
+            return "（问题为空）";
+        }
+        StringBuilder sb = new StringBuilder();
+        if (matches(question, "挂科", "不及格", "风险", "危险", "预警学生", "预警")) {
+            List<WarningRecord> ws = warningRecordMapper.selectList(new LambdaQueryWrapper<WarningRecord>()
+                    .eq(WarningRecord::getStatus, "ACTIVE")
+                    .orderByDesc(WarningRecord::getWarningLevel).last("limit 5"));
+            sb.append("待处理预警前 5：\n");
+            if (ws.isEmpty()) {
+                sb.append("当前无待处理预警。");
+            } else {
+                ws.forEach(w -> sb.append("- ").append(studentName(w.getStudentId())).append("：")
+                        .append(levelText(w.getWarningLevel())).append("预警 · ")
+                        .append(w.getTitle()).append("\n"));
+            }
+        } else if (matches(question, "下滑", "退步", "下降", "波动", "高风")) {
+            List<PredictionResult> ps = predictionResultMapper.selectList(
+                    new LambdaQueryWrapper<PredictionResult>()
+                            .orderByDesc(PredictionResult::getRiskProbability).last("limit 5"));
+            sb.append("风险概率最高的 5 名学生：\n");
+            if (ps.isEmpty()) {
+                sb.append("暂无预测数据。");
+            } else {
+                ps.forEach(p -> sb.append("- ").append(studentName(p.getStudentId())).append("：风险概率 ")
+                        .append(p.getRiskProbability() == null ? "-" : p.getRiskProbability().toPlainString())
+                        .append("\n"));
+            }
+        } else if (matches(question, "出勤", "缺勤", "迟到", "旷课")) {
+            List<Attendance> bad = attendanceMapper.selectList(
+                    new LambdaQueryWrapper<Attendance>()
+                            .in(Attendance::getStatus, "ABSENT", "LATE", "EARLY")
+                            .orderByDesc(Attendance::getId).last("limit 8"));
+            sb.append("最近缺勤/迟到/早退记录：\n");
+            if (bad.isEmpty()) {
+                sb.append("最近无缺勤记录。");
+            } else {
+                bad.forEach(a -> sb.append("- ").append(studentName(a.getStudentId())).append("：")
+                        .append(a.getStatus()).append(" ").append(a.getCheckDate()).append("\n"));
+            }
+        } else if (matches(question, "优秀", "高分", "排名", "前", "最好")) {
+            List<Score> tops = scoreMapper.selectList(
+                    new LambdaQueryWrapper<Score>().orderByDesc(Score::getTotalScore).last("limit 5"));
+            sb.append("成绩最高的 5 条记录：\n");
+            if (tops.isEmpty()) {
+                sb.append("暂无成绩数据。");
+            } else {
+                tops.forEach(s -> sb.append("- ").append(studentName(s.getStudentId())).append("：")
+                        .append(s.getTotalScore() == null ? "-" : s.getTotalScore().toPlainString())
+                        .append(" 分\n"));
+            }
+        } else {
+            Term term = termMapper.selectOne(new LambdaQueryWrapper<Term>().eq(Term::getIsCurrent, 1).last("limit 1"));
+            sb.append("全校概览：学生总数 ")
+                    .append(studentMapper.selectCount(null))
+                    .append("；当前学期 ")
+                    .append(term == null ? "-" : term.getTermName())
+                    .append("；待处理预警 ")
+                    .append(warningRecordMapper.selectCount(new LambdaQueryWrapper<WarningRecord>()
+                            .eq(WarningRecord::getStatus, "ACTIVE")))
+                    .append(" 条。");
+        }
+        return sb.toString();
+    }
+
+    private String studentName(Long studentId) {
+        Student s = studentMapper.selectById(studentId);
+        return s == null ? ("学生#" + studentId) : s.getName();
+    }
 
     /**
      * 规则化报告：模型不可用时的确定性输出

@@ -51,7 +51,8 @@ class TemplateRenderDataDrivenTest {
                 Mockito.mock(AiCallLogMapper.class),
                 Mockito.mock(ReportRecordMapper.class),
                 Mockito.mock(OllamaClient.class),
-                Mockito.mock(KnowledgeService.class));
+                Mockito.mock(KnowledgeService.class),
+                Mockito.mock(BigScreenService.class));
         ReflectionTestUtils.setField(service, "llmEnabled", false);
         ReflectionTestUtils.setField(service, "fallbackToRule", true);
     }
