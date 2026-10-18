@@ -164,6 +164,12 @@ const routes = [
         meta: { title: '校级大屏', code: 'BIG_SCREEN' }
       },
       {
+        path: 'monitor',
+        name: 'Monitor',
+        component: () => import('@/views/monitor/MonitorView.vue'),
+        meta: { title: '监察中心', code: 'MONITOR' }
+      },
+      {
         path: 'parent',
         name: 'Parent',
         component: () => import('@/views/parent/ParentView.vue'),

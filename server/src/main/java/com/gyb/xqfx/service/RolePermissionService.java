@@ -54,6 +54,7 @@ public class RolePermissionService {
     public static final String MODEL = "MODEL";
     public static final String AGENT = "AGENT";
     public static final String BIG_SCREEN = "BIG_SCREEN";
+    public static final String MONITOR = "MONITOR";
 
     /** 学生端与家长端角色 */
     public static final Set<String> STUDENT_ROLES = Set.of("STUDENT");
@@ -111,6 +112,8 @@ public class RolePermissionService {
         MATRIX.put(AGENT, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER", "STUDENT"));
         // 校级大屏：教学管理与校级驾驶舱
         MATRIX.put(BIG_SCREEN, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"));
+        // 监察中心：仅超级管理员，可监察三端内容与数据
+        MATRIX.put(MONITOR, Set.of("ADMIN"));
 
         // code -> { 名称, 路由, 图标分组 }
         MENU.put(DASHBOARD, new String[]{"学情总览", "/dashboard", "main"});
@@ -139,6 +142,7 @@ public class RolePermissionService {
         MENU.put(MODEL, new String[]{"模型管理", "/model", "main"});
         MENU.put(AGENT, new String[]{"学情智能体", "/agent", "main"});
         MENU.put(BIG_SCREEN, new String[]{"校级大屏", "/bigscreen", "main"});
+        MENU.put(MONITOR, new String[]{"监察中心", "/monitor", "main"});
     }
 
     /**

@@ -68,6 +68,15 @@ xqfx:
   acad:
     provider: mock
     mock-batch: 50
+  # 启动实时初始化：空库时自动生成演示数据，保证启动即处于实时可演示状态
+  bootstrap:
+    auto-demo: true
+    demo-count: 200
+  # 运行中实时数据流：定时模拟新考勤/在线行为/新预警
+  realtime:
+    enabled: true
+    interval-ms: 60000
+    batch: 5
   # 数据脱敏开关
   privacy:
     mask-phone: true
