@@ -95,10 +95,14 @@ public class ExportService {
 
     /**
      * 导出成绩数据
+     *
+     * @param studentIds 数据范围限定的学生ID（null 表示全量）
      */
-    public void exportScores(HttpServletResponse response, Long termId) throws IOException {
+    public void exportScores(HttpServletResponse response, Long termId, java.util.List<Long> studentIds)
+            throws IOException {
         List<Score> scores = scoreMapper.selectList(new LambdaQueryWrapper<Score>()
-                .eq(termId != null, Score::getTermId, termId));
+                .eq(termId != null, Score::getTermId, termId)
+                .in(studentIds != null && !studentIds.isEmpty(), Score::getStudentId, studentIds));
         List<List<Object>> rows = new ArrayList<>();
         for (Score sc : scores) {
             Student s = studentMapper.selectById(sc.getStudentId());
@@ -121,10 +125,14 @@ public class ExportService {
 
     /**
      * 导出预警数据
+     *
+     * @param studentIds 数据范围限定的学生ID（null 表示全量）
      */
-    public void exportWarnings(HttpServletResponse response, Long termId) throws IOException {
+    public void exportWarnings(HttpServletResponse response, Long termId, java.util.List<Long> studentIds)
+            throws IOException {
         List<WarningRecord> records = warningRecordMapper.selectList(new LambdaQueryWrapper<WarningRecord>()
-                .eq(termId != null, WarningRecord::getTermId, termId));
+                .eq(termId != null, WarningRecord::getTermId, termId)
+                .in(studentIds != null && !studentIds.isEmpty(), WarningRecord::getStudentId, studentIds));
         List<List<Object>> rows = new ArrayList<>();
         for (WarningRecord r : records) {
             Student s = studentMapper.selectById(r.getStudentId());
@@ -145,9 +153,12 @@ public class ExportService {
 
     /**
      * 导出干预工单数据
+     *
+     * @param studentIds 数据范围限定的学生ID（null 表示全量）
      */
-    public void exportTickets(HttpServletResponse response) throws IOException {
-        List<InterventionTicket> tickets = ticketMapper.selectList(null);
+    public void exportTickets(HttpServletResponse response, java.util.List<Long> studentIds) throws IOException {
+        List<InterventionTicket> tickets = ticketMapper.selectList(new LambdaQueryWrapper<InterventionTicket>()
+                .in(studentIds != null && !studentIds.isEmpty(), InterventionTicket::getStudentId, studentIds));
         List<List<Object>> rows = new ArrayList<>();
         for (InterventionTicket t : tickets) {
             Student s = studentMapper.selectById(t.getStudentId());
@@ -172,9 +183,20 @@ public class ExportService {
 
     /**
      * 导出学业指标数据
+     *
+     * @param studentIds 数据范围限定的学生ID（null 表示全量）
      */
-    public void exportIndicators(HttpServletResponse response, Long termId) throws IOException {
+    public void exportIndicators(HttpServletResponse response, Long termId, java.util.List<Long> studentIds)
+            throws IOException {
         List<AcademicIndicatorVO> list = indicatorService.batchCalculate(termId, 0);
+        if (studentIds != null && !studentIds.isEmpty()) {
+            // 按数据范围过滤：学号集合 → 允许导出的学号
+            List<Student> scoped = studentMapper.selectList(new LambdaQueryWrapper<Student>()
+                    .in(Student::getId, studentIds));
+            java.util.Set<String> allowedNos = scoped.stream().map(Student::getStudentNo).collect(java.util.stream.Collectors.toSet());
+            list = list.stream().filter(v -> v.getStudentNo() != null && allowedNos.contains(v.getStudentNo()))
+                    .collect(java.util.stream.Collectors.toList());
+        }
         List<List<Object>> rows = new ArrayList<>();
         for (AcademicIndicatorVO v : list) {
             List<Object> row = new ArrayList<>();

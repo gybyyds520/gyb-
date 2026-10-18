@@ -45,6 +45,7 @@ public class PredictionController {
     private final StudentMapper studentMapper;
     private final TermMapper termMapper;
     private final MlServiceClient mlServiceClient;
+    private final com.gyb.xqfx.service.DataScopeService dataScopeService;
 
     @Operation(summary = "预测服务健康检查")
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER", "STUDENT", "PARENT"})
@@ -82,6 +83,9 @@ public class PredictionController {
         LambdaQueryWrapper<PredictionResult> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(termId != null, PredictionResult::getTermId, termId);
         wrapper.eq(riskLevel != null, PredictionResult::getRiskLevel, riskLevel);
+        // 数据范围：限定可见学生
+        java.util.List<Long> scope = dataScopeService.scopeForQuery();
+        wrapper.in(scope != null && !scope.isEmpty(), PredictionResult::getStudentId, scope);
         wrapper.orderByDesc(PredictionResult::getRiskLevel).orderByDesc(PredictionResult::getRiskProbability);
 
         Page<PredictionResult> page = predictionResultMapper.selectPage(new Page<>(current, size), wrapper);

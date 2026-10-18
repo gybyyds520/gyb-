@@ -30,6 +30,7 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
     private final WarningRecordMapper warningRecordMapper;
+    private final com.gyb.xqfx.service.DataScopeService dataScopeService;
 
     @Operation(summary = "系统概览统计")
     @GetMapping("/overview")
@@ -49,9 +50,12 @@ public class DashboardController {
     @GetMapping("/latest-warnings")
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<List<WarningRecord>> latestWarnings() {
+        // 数据范围：仅返回可见学生的待处理预警（含学生姓名/联系方式，必须按范围过滤）
+        java.util.List<Long> scope = dataScopeService.scopeForQuery();
         List<WarningRecord> list = warningRecordMapper.selectList(
                 new LambdaQueryWrapper<WarningRecord>()
                         .eq(WarningRecord::getStatus, "ACTIVE")
+                        .in(scope != null && !scope.isEmpty(), WarningRecord::getStudentId, scope)
                         .orderByDesc(WarningRecord::getWarningLevel)
                         .last("LIMIT " + LATEST_WARNING_SIZE));
         return Result.success(list);

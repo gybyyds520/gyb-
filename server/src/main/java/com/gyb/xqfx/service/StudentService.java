@@ -20,8 +20,10 @@ public interface StudentService extends IService<Student> {
      * @param size    每页条数
      * @param query   查询条件
      * @param masked  是否脱敏
+     * @param studentIds 数据范围限定的学生ID（null 表示全量，由 DataScope 传入）
      */
-    IPage<StudentVO> pageStudents(long current, long size, StudentQuery query, boolean masked);
+    IPage<StudentVO> pageStudents(long current, long size, StudentQuery query, boolean masked,
+                                  java.util.List<Long> studentIds);
 
     /**
      * 根据学号查询

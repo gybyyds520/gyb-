@@ -71,17 +71,21 @@ public class AiController {
 
     @Operation(summary = "生成学生学情分析报告")
     @PostMapping("/report")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<AiAnalysisService.AiResult> report(@RequestParam Long studentId,
                                                      @RequestParam(required = false) Long termId,
                                                      @RequestParam(required = false) Long userId) {
+        dataScopeService.requireStudentAccess(studentId);
         return Result.success(aiAnalysisService.generateReport(studentId, termId, userId));
     }
 
     @Operation(summary = "生成个性化改进建议")
     @PostMapping("/advice")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<AiAnalysisService.AiResult> advice(@RequestParam Long studentId,
                                                      @RequestParam(required = false) Long termId,
                                                      @RequestParam(required = false) Long userId) {
+        dataScopeService.requireStudentAccess(studentId);
         return Result.success(aiAnalysisService.generateAdvice(studentId, termId, userId));
     }
 
@@ -252,28 +256,32 @@ public class AiController {
         return emitter;
     }
 
-    @Operation(summary = "提示词模板列表")
+    @Operation(summary = "提示词模板列表（AI 管理配置）")
     @GetMapping("/templates")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<List<AiPromptTemplate>> templates() {
         return Result.success(templateMapper.selectList(null));
     }
 
-    @Operation(summary = "新增或更新提示词模板")
+    @Operation(summary = "新增或更新提示词模板（AI 管理配置）")
     @PostMapping("/templates")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<Boolean> saveTemplate(@RequestBody AiPromptTemplate template) {
         return Result.success(template.getId() == null
                 ? templateMapper.insert(template) > 0
                 : templateMapper.updateById(template) > 0);
     }
 
-    @Operation(summary = "知识库文档列表")
+    @Operation(summary = "知识库文档列表（AI 管理配置）")
     @GetMapping("/knowledge")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<List<KnowledgeDoc>> knowledgeList() {
         return Result.success(knowledgeService.listDocs());
     }
 
     @Operation(summary = "录入知识库文档（自动分片与向量化）")
     @PostMapping(value = "/knowledge", consumes = MediaType.TEXT_PLAIN_VALUE)
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<Long> addKnowledge(@RequestParam String docName,
                                      @RequestParam(defaultValue = "OTHER") String docType,
                                      @RequestBody String content) {
@@ -282,13 +290,15 @@ public class AiController {
 
     @Operation(summary = "删除知识库文档")
     @DeleteMapping("/knowledge/{id}")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<Boolean> deleteKnowledge(@PathVariable Long id) {
         knowledgeService.deleteDoc(id);
         return Result.success(true, "已删除");
     }
 
-    @Operation(summary = "大模型调用日志")
+    @Operation(summary = "大模型调用日志（AI 管理配置，含提问内容）")
     @GetMapping("/logs")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<List<AiCallLog>> logs() {
         return Result.success(callLogMapper.selectList(null));
     }

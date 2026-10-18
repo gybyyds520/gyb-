@@ -8,6 +8,8 @@ import com.gyb.xqfx.model.query.ScoreQuery;
 import com.gyb.xqfx.model.vo.ScoreVO;
 import com.gyb.xqfx.service.ExcelImportService;
 import com.gyb.xqfx.service.ScoreService;
+import com.gyb.xqfx.annotation.RequireRole;
+import com.gyb.xqfx.service.DataScopeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,16 +23,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * 成绩管理
+ * 成绩管理（仅教师与管理者可操作，数据范围按登录角色限定）
  */
 @Tag(name = "学情数据-成绩")
 @RestController
 @RequestMapping("/score")
 @RequiredArgsConstructor
+@RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
 public class ScoreController {
 
     private final ScoreService scoreService;
     private final ExcelImportService excelImportService;
+    private final DataScopeService dataScopeService;
 
     @Operation(summary = "分页查询成绩")
     @GetMapping("/page")
@@ -41,12 +45,16 @@ public class ScoreController {
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Long termId,
             @RequestParam(required = false) Boolean onlyFailed) {
+        if (studentId != null) {
+            dataScopeService.requireStudentAccess(studentId);
+        }
         ScoreQuery query = new ScoreQuery();
         query.setStudentId(studentId);
         query.setCourseId(courseId);
         query.setTermId(termId);
         query.setOnlyFailed(onlyFailed);
-        return Result.success(PageResult.of(scoreService.pageScores(current, size, query)));
+        return Result.success(PageResult.of(
+                scoreService.pageScores(current, size, query, dataScopeService.scopeForQuery())));
     }
 
     @Operation(summary = "Excel 批量导入成绩")

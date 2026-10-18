@@ -2,6 +2,7 @@ package com.gyb.xqfx.controller;
 
 import com.gyb.xqfx.annotation.Audit;
 import com.gyb.xqfx.common.Result;
+import com.gyb.xqfx.service.DataScopeService;
 import com.gyb.xqfx.service.ExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +28,7 @@ import com.gyb.xqfx.annotation.RequireRole;
 public class ExportController {
 
     private final ExportService exportService;
+    private final DataScopeService dataScopeService;
 
     @Operation(summary = "导出成绩数据")
     @GetMapping("/scores")
@@ -34,7 +36,7 @@ public class ExportController {
     @Audit(module = "数据导出", operation = "导出成绩数据")
     public void scores(HttpServletResponse response, @RequestParam(required = false) Long termId)
             throws IOException {
-        exportService.exportScores(response, termId);
+        exportService.exportScores(response, termId, dataScopeService.scopeForQuery());
     }
 
     @Operation(summary = "导出预警数据")
@@ -43,7 +45,7 @@ public class ExportController {
     @Audit(module = "数据导出", operation = "导出预警数据")
     public void warnings(HttpServletResponse response, @RequestParam(required = false) Long termId)
             throws IOException {
-        exportService.exportWarnings(response, termId);
+        exportService.exportWarnings(response, termId, dataScopeService.scopeForQuery());
     }
 
     @Operation(summary = "导出干预工单")
@@ -51,7 +53,7 @@ public class ExportController {
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     @Audit(module = "数据导出", operation = "导出干预工单")
     public void tickets(HttpServletResponse response) throws IOException {
-        exportService.exportTickets(response);
+        exportService.exportTickets(response, dataScopeService.scopeForQuery());
     }
 
     @Operation(summary = "导出学业指标")
@@ -60,7 +62,7 @@ public class ExportController {
     @Audit(module = "数据导出", operation = "导出学业指标")
     public void indicators(HttpServletResponse response, @RequestParam(required = false) Long termId)
             throws IOException {
-        exportService.exportIndicators(response, termId);
+        exportService.exportIndicators(response, termId, dataScopeService.scopeForQuery());
     }
 
     @Operation(summary = "查询导出字段 Schema")

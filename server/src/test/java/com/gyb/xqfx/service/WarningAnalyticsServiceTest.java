@@ -104,7 +104,7 @@ class WarningAnalyticsServiceTest {
         Mockito.when(warningRecordMapper.selectList(any())).thenReturn(List.of(
                 warning(1L, 4, "ACTIVE"), warning(1L, 2, "HANDLED")));
 
-        List<WarningAnalyticsVO.DrillItem> items = service.drillDown(null, "COLLEGE");
+        List<WarningAnalyticsVO.DrillItem> items = service.drillDown(null, "COLLEGE", null);
         assertEquals(2, items.size());
         // 计算机学院预警 2 条排前
         assertEquals("计算机学院", items.get(0).getName());
@@ -126,7 +126,7 @@ class WarningAnalyticsServiceTest {
                 student(1L, 1L, "2021", "M"), student(2L, 1L, "2022", "F")));
         Mockito.when(warningRecordMapper.selectList(any())).thenReturn(List.of());
 
-        List<WarningAnalyticsVO.DrillItem> items = service.drillDown(null, "GRADE");
+        List<WarningAnalyticsVO.DrillItem> items = service.drillDown(null, "GRADE", null);
         assertEquals(2, items.size());
         assertTrue(items.stream().anyMatch(i -> "2021级".equals(i.getName())));
         assertTrue(items.stream().anyMatch(i -> "2022级".equals(i.getName())));
@@ -140,7 +140,7 @@ class WarningAnalyticsServiceTest {
                 student(3L, 1L, "2021", "男")));
         Mockito.when(warningRecordMapper.selectList(any())).thenReturn(List.of());
 
-        List<WarningAnalyticsVO.DrillItem> items = service.drillDown(null, "GENDER");
+        List<WarningAnalyticsVO.DrillItem> items = service.drillDown(null, "GENDER", null);
         // M 与 男 归一化为同一项
         assertTrue(items.stream().anyMatch(i -> "男".equals(i.getName()) && i.getStudentCount() == 2));
         assertTrue(items.stream().anyMatch(i -> "女".equals(i.getName()) && i.getStudentCount() == 1));
@@ -151,7 +151,7 @@ class WarningAnalyticsServiceTest {
     void testDrillUnassigned() {
         Mockito.when(studentMapper.selectList(any())).thenReturn(List.of(student(1L, null, "2021", "M")));
         Mockito.when(warningRecordMapper.selectList(any())).thenReturn(List.of());
-        assertEquals("未分配学院", service.drillDown(null, "COLLEGE").get(0).getName());
+        assertEquals("未分配学院", service.drillDown(null, "COLLEGE", null).get(0).getName());
     }
 
     @Test
@@ -159,7 +159,7 @@ class WarningAnalyticsServiceTest {
     void testDrillEmpty() {
         Mockito.when(studentMapper.selectList(any())).thenReturn(List.of());
         Mockito.when(warningRecordMapper.selectList(any())).thenReturn(List.of());
-        assertTrue(service.drillDown(null, "COLLEGE").isEmpty());
+        assertTrue(service.drillDown(null, "COLLEGE", null).isEmpty());
     }
 
     // ==================== 风险事件时间线 ====================

@@ -83,10 +83,14 @@ public class PerformanceService {
 
     /**
      * 班级课堂表现排名：按平均参与度降序
+     *
+     * @param studentIds 数据范围限定的学生ID（null 表示全量）
      */
-    public List<PerformanceVO> ranking(Long termId, int limit) {
+    public List<PerformanceVO> ranking(Long termId, int limit, java.util.List<Long> studentIds) {
         List<ClassPerformance> all = performanceMapper.selectList(new LambdaQueryWrapper<ClassPerformance>()
-                .eq(termId != null, ClassPerformance::getTermId, termId));
+                .eq(termId != null, ClassPerformance::getTermId, termId)
+                .in(studentIds != null && !studentIds.isEmpty(),
+                        ClassPerformance::getStudentId, studentIds));
         Map<Long, List<ClassPerformance>> byStudent = all.stream()
                 .collect(Collectors.groupingBy(ClassPerformance::getStudentId));
         List<PerformanceVO> list = new java.util.ArrayList<>();

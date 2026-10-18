@@ -17,6 +17,7 @@ import com.gyb.xqfx.mapper.CourseOfferingMapper;
 import com.gyb.xqfx.mapper.MajorMapper;
 import com.gyb.xqfx.mapper.TeacherMapper;
 import com.gyb.xqfx.mapper.TermMapper;
+import com.gyb.xqfx.annotation.RequireRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,8 @@ import java.util.List;
 
 /**
  * 基础数据：学院 / 专业 / 班级 / 学期 / 课程 / 教师 / 开课
+ *
+ * <p>读取为三端共享字典（联通）；新增/修改/删除属教务维护，仅教师与管理者可操作（隔离）。</p>
  */
 @Tag(name = "基础数据")
 @RestController
@@ -56,8 +59,9 @@ public class BaseDataController {
         return Result.success(mapper(type).selectById(id));
     }
 
-    @Operation(summary = "新增或更新")
+    @Operation(summary = "新增或更新（教务维护）")
     @PostMapping("/{type}")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<Boolean> save(@PathVariable String type, @RequestBody java.util.Map<String, Object> body) {
         Object entity = toEntity(type, body);
         @SuppressWarnings("rawtypes")
@@ -67,8 +71,9 @@ public class BaseDataController {
         return Result.success(rows > 0);
     }
 
-    @Operation(summary = "删除")
+    @Operation(summary = "删除（教务维护）")
     @DeleteMapping("/{type}/{id}")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<Boolean> remove(@PathVariable String type, @PathVariable Long id) {
         return Result.success(mapper(type).deleteById(id) > 0);
     }

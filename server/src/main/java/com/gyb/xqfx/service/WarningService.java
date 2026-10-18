@@ -175,12 +175,16 @@ public class WarningService {
      * 分页查询预警（带学生姓名与班级）
      */
     public IPage<WarningVO> pageWarnings(long current, long size, Integer level, String status,
-                                         Long termId, String warningType, boolean masked) {
+                                         Long termId, String warningType, boolean masked,
+                                         java.util.List<Long> scopeStudentIds) {
         LambdaQueryWrapper<WarningRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(level != null, WarningRecord::getWarningLevel, level);
         wrapper.eq(status != null && !status.isEmpty(), WarningRecord::getStatus, status);
         wrapper.eq(termId != null, WarningRecord::getTermId, termId);
         wrapper.eq(warningType != null && !warningType.isEmpty(), WarningRecord::getWarningType, warningType);
+        // 数据范围：限定可见学生
+        wrapper.in(scopeStudentIds != null && !scopeStudentIds.isEmpty(),
+                WarningRecord::getStudentId, scopeStudentIds);
         wrapper.orderByDesc(WarningRecord::getWarningLevel).orderByDesc(WarningRecord::getId);
 
         Page<WarningRecord> page = recordMapper.selectPage(new Page<>(current, size), wrapper);
@@ -235,10 +239,12 @@ public class WarningService {
     /**
      * 统计各等级预警数量
      */
-    public Map<Integer, Long> statistics(Long termId) {
+    public Map<Integer, Long> statistics(Long termId, java.util.List<Long> studentIds) {
         List<WarningRecord> records = recordMapper.selectList(
                 new LambdaQueryWrapper<WarningRecord>()
                         .eq(termId != null, WarningRecord::getTermId, termId)
+                        .in(studentIds != null && !studentIds.isEmpty(),
+                                WarningRecord::getStudentId, studentIds)
                         .eq(WarningRecord::getStatus, "ACTIVE"));
         return records.stream()
                 .filter(w -> w.getWarningLevel() != null)
@@ -248,10 +254,12 @@ public class WarningService {
     /**
      * 统计各维度类型预警数量（学业/出勤/作业/挂科/进度/心理/行为等）
      */
-    public Map<String, Long> typeStatistics(Long termId) {
+    public Map<String, Long> typeStatistics(Long termId, java.util.List<Long> studentIds) {
         List<WarningRecord> records = recordMapper.selectList(
                 new LambdaQueryWrapper<WarningRecord>()
                         .eq(termId != null, WarningRecord::getTermId, termId)
+                        .in(studentIds != null && !studentIds.isEmpty(),
+                                WarningRecord::getStudentId, studentIds)
                         .eq(WarningRecord::getStatus, "ACTIVE"));
         return records.stream()
                 .filter(w -> w.getWarningType() != null && !w.getWarningType().isBlank())

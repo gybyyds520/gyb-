@@ -68,13 +68,18 @@ public class WarningAnalyticsService {
      *
      * @param termId    学期，为空表示全部
      * @param dimension COLLEGE / MAJOR / GRADE / GENDER / CLAZZ
+     * @param studentIds 数据范围限定的学生ID（null 表示全量）
      */
-    public List<WarningAnalyticsVO.DrillItem> drillDown(Long termId, String dimension) {
+    public List<WarningAnalyticsVO.DrillItem> drillDown(Long termId, String dimension,
+                                                        java.util.List<Long> studentIds) {
         String dim = dimension == null ? "COLLEGE" : dimension.toUpperCase();
-        List<Student> students = studentMapper.selectList(null);
+        List<Student> students = studentMapper.selectList(
+                new LambdaQueryWrapper<Student>()
+                        .in(studentIds != null && !studentIds.isEmpty(), Student::getId, studentIds));
         List<WarningRecord> warnings = warningRecordMapper.selectList(
                 new LambdaQueryWrapper<WarningRecord>()
-                        .eq(termId != null, WarningRecord::getTermId, termId));
+                        .eq(termId != null, WarningRecord::getTermId, termId)
+                        .in(studentIds != null && !studentIds.isEmpty(), WarningRecord::getStudentId, studentIds));
 
         Map<Long, Integer> warningByStudent = new LinkedHashMap<>();
         Map<Long, List<WarningRecord>> warningsOf = new LinkedHashMap<>();

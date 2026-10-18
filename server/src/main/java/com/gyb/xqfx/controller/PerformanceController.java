@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import com.gyb.xqfx.annotation.RequireRole;
+import com.gyb.xqfx.service.DataScopeService;
 
 /**
  * 课堂表现
@@ -23,6 +24,7 @@ import com.gyb.xqfx.annotation.RequireRole;
 public class PerformanceController {
 
     private final PerformanceService performanceService;
+    private final DataScopeService dataScopeService;
 
     @Operation(summary = "记录课堂表现")
     @PostMapping
@@ -36,6 +38,7 @@ public class PerformanceController {
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<List<ClassPerformance>> listByStudent(@PathVariable Long studentId,
                                                         @RequestParam(required = false) Long termId) {
+        dataScopeService.requireStudentAccess(studentId);
         return Result.success(performanceService.listByStudent(studentId, termId));
     }
 
@@ -44,6 +47,7 @@ public class PerformanceController {
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<PerformanceVO> summary(@RequestParam Long studentId,
                                          @RequestParam(required = false) Long termId) {
+        dataScopeService.requireStudentAccess(studentId);
         return Result.success(performanceService.summary(studentId, termId));
     }
 
@@ -52,7 +56,7 @@ public class PerformanceController {
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<List<PerformanceVO>> ranking(@RequestParam(required = false) Long termId,
                                                @RequestParam(defaultValue = "20") int limit) {
-        return Result.success(performanceService.ranking(termId, limit));
+        return Result.success(performanceService.ranking(termId, limit, dataScopeService.scopeForQuery()));
     }
 
     @Operation(summary = "生成演示课堂表现数据")

@@ -199,7 +199,7 @@ class WarningServiceTest {
         c.setWarningLevel(2);
         when(recordMapper.selectList(any())).thenReturn(List.of(a, b, c));
 
-        var stats = service.statistics(null);
+        var stats = service.statistics(null, null);
         assertEquals(2L, stats.get(4));
         assertEquals(1L, stats.get(2));
     }
@@ -217,7 +217,7 @@ class WarningServiceTest {
         d.setWarningType(null); // 未打类型的不计入
         when(recordMapper.selectList(any())).thenReturn(List.of(a, b, c, d));
 
-        var stats = service.typeStatistics(1L);
+        var stats = service.typeStatistics(1L, null);
         assertEquals(2L, stats.get("ACADEMIC"));
         assertEquals(1L, stats.get("BEHAVIOR"));
         assertEquals(2, stats.size());

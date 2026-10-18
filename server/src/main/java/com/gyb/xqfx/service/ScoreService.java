@@ -13,6 +13,8 @@ public interface ScoreService extends IService<Score> {
 
     /**
      * 分页查询成绩（含学生/课程/学期名称）
+     *
+     * @param studentIds 数据范围限定的学生ID（null 表示全量，由 DataScope 传入）
      */
-    IPage<ScoreVO> pageScores(long current, long size, ScoreQuery query);
+    IPage<ScoreVO> pageScores(long current, long size, ScoreQuery query, java.util.List<Long> studentIds);
 }

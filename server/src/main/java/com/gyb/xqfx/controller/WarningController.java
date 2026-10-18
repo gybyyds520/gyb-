@@ -50,21 +50,22 @@ public class WarningController {
             @RequestParam(required = false) String warningType,
             @RequestParam(defaultValue = "false") boolean masked) {
         return Result.success(PageResult.of(
-                warningService.pageWarnings(current, size, level, status, termId, warningType, masked)));
+                warningService.pageWarnings(current, size, level, status, termId, warningType, masked,
+                        dataScopeService.scopeForQuery())));
     }
 
     @Operation(summary = "预警等级统计")
     @GetMapping("/statistics")
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<Map<Integer, Long>> statistics(@RequestParam(required = false) Long termId) {
-        return Result.success(warningService.statistics(termId));
+        return Result.success(warningService.statistics(termId, dataScopeService.scopeForQuery()));
     }
 
     @Operation(summary = "预警维度类型统计（学业/出勤/作业/挂科/进度/心理/行为等）")
     @GetMapping("/type-statistics")
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<Map<String, Long>> typeStatistics(@RequestParam(required = false) Long termId) {
-        return Result.success(warningService.typeStatistics(termId));
+        return Result.success(warningService.typeStatistics(termId, dataScopeService.scopeForQuery()));
     }
 
     @Operation(summary = "处理预警")
@@ -84,7 +85,7 @@ public class WarningController {
     public Result<List<WarningAnalyticsVO.DrillItem>> drill(
             @RequestParam(required = false) Long termId,
             @RequestParam(defaultValue = "COLLEGE") String dimension) {
-        return Result.success(warningAnalyticsService.drillDown(termId, dimension));
+        return Result.success(warningAnalyticsService.drillDown(termId, dimension, dataScopeService.scopeForQuery()));
     }
 
     @Operation(summary = "学生风险事件时间线")
@@ -101,6 +102,7 @@ public class WarningController {
     public Result<WarningAnalyticsVO.AcademicTrigger> academicTrigger(
             @RequestParam Long studentId,
             @RequestParam(required = false) Long termId) {
+        dataScopeService.requireStudentAccess(studentId);
         return Result.success(warningAnalyticsService.evalAcademicTrigger(studentId, termId));
     }
 

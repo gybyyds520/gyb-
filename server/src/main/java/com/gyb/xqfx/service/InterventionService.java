@@ -141,11 +141,15 @@ public class InterventionService {
 
     /**
      * 查询工单列表（含学生信息）
+     *
+     * @param studentIds 数据范围限定的学生ID（null 表示全量）
      */
-    public List<InterventionTicketVO> listTickets(String status, Long studentId) {
+    public List<InterventionTicketVO> listTickets(String status, Long studentId, java.util.List<Long> scopeStudentIds) {
         LambdaQueryWrapper<InterventionTicket> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(status != null && !status.isEmpty(), InterventionTicket::getStatus, status);
         wrapper.eq(studentId != null, InterventionTicket::getStudentId, studentId);
+        wrapper.in(scopeStudentIds != null && !scopeStudentIds.isEmpty(),
+                InterventionTicket::getStudentId, scopeStudentIds);
         wrapper.orderByDesc(InterventionTicket::getId);
 
         List<InterventionTicket> tickets = ticketMapper.selectList(wrapper);

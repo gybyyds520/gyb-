@@ -43,7 +43,7 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     private final ClazzMapper clazzMapper;
 
     @Override
-    public IPage<ScoreVO> pageScores(long current, long size, ScoreQuery query) {
+    public IPage<ScoreVO> pageScores(long current, long size, ScoreQuery query, List<Long> studentIds) {
         LambdaQueryWrapper<Score> wrapper = new LambdaQueryWrapper<>();
         if (query != null) {
             wrapper.eq(query.getStudentId() != null, Score::getStudentId, query.getStudentId());
@@ -51,6 +51,8 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
             wrapper.eq(query.getTermId() != null, Score::getTermId, query.getTermId());
             wrapper.eq(Boolean.TRUE.equals(query.getOnlyFailed()), Score::getIsPass, 0);
         }
+        // 数据范围：限定可见学生
+        wrapper.in(studentIds != null && !studentIds.isEmpty(), Score::getStudentId, studentIds);
         wrapper.orderByDesc(Score::getTermId).orderByAsc(Score::getStudentId);
 
         Page<Score> page = this.page(new Page<>(current, size), wrapper);

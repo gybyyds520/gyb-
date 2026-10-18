@@ -5,10 +5,14 @@ import com.gyb.xqfx.annotation.RequireRole;
 import com.gyb.xqfx.common.Result;
 import com.gyb.xqfx.entity.InterventionLog;
 import com.gyb.xqfx.entity.InterventionTicket;
+import com.gyb.xqfx.entity.WarningRecord;
+import com.gyb.xqfx.mapper.InterventionTicketMapper;
+import com.gyb.xqfx.mapper.WarningRecordMapper;
 import com.gyb.xqfx.model.vo.InterventionTicketVO;
 import com.gyb.xqfx.model.vo.TicketSlaVO;
 import com.gyb.xqfx.security.SecurityUtils;
 import com.gyb.xqfx.service.AiAnalysisService;
+import com.gyb.xqfx.service.DataScopeService;
 import com.gyb.xqfx.service.InterventionService;
 import com.gyb.xqfx.service.TicketSlaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,11 +37,31 @@ public class InterventionController {
     private final InterventionService interventionService;
     private final TicketSlaService ticketSlaService;
     private final AiAnalysisService aiAnalysisService;
+    private final DataScopeService dataScopeService;
+    private final InterventionTicketMapper ticketMapper;
+    private final WarningRecordMapper warningRecordMapper;
+
+    /** 校验当前登录用户可访问该预警关联的学生 */
+    private void requireWarningAccess(Long warningId) {
+        WarningRecord w = warningRecordMapper.selectById(warningId);
+        if (w != null) {
+            dataScopeService.requireStudentAccess(w.getStudentId());
+        }
+    }
+
+    /** 校验当前登录用户可访问该工单关联的学生 */
+    private void requireTicketAccess(Long ticketId) {
+        InterventionTicket t = ticketMapper.selectById(ticketId);
+        if (t != null) {
+            dataScopeService.requireStudentAccess(t.getStudentId());
+        }
+    }
 
     @Operation(summary = "AI 生成干预帮扶方案（教师确认后可用于创建工单）")
     @PostMapping("/ai-plan/{warningId}")
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<AiAnalysisService.AiResult> aiPlan(@PathVariable Long warningId) {
+        requireWarningAccess(warningId);
         return Result.success(
                 aiAnalysisService.generateInterventionPlan(warningId, SecurityUtils.currentUserId()));
     }
@@ -48,7 +72,10 @@ public class InterventionController {
     public Result<List<InterventionTicketVO>> tickets(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long studentId) {
-        return Result.success(interventionService.listTickets(status, studentId));
+        if (studentId != null) {
+            dataScopeService.requireStudentAccess(studentId);
+        }
+        return Result.success(interventionService.listTickets(status, studentId, dataScopeService.scopeForQuery()));
     }
 
     @Operation(summary = "由预警创建干预工单")
@@ -60,6 +87,7 @@ public class InterventionController {
             @RequestParam(defaultValue = "TALK") String interveneType,
             @RequestParam(required = false) String plan,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDate) {
+        requireWarningAccess(warningId);
         return Result.success(
                 interventionService.createFromWarning(warningId, ownerUserId, interveneType, plan, dueDate),
                 "工单创建成功");
@@ -72,6 +100,7 @@ public class InterventionController {
     public Result<Boolean> close(@PathVariable Long id,
                                  @RequestParam(required = false) String conclusion,
                                  @RequestParam(defaultValue = "SLIGHT") String effectEval) {
+        requireTicketAccess(id);
         return Result.success(interventionService.closeTicket(id, conclusion, effectEval), "工单已关闭");
     }
 
@@ -82,6 +111,7 @@ public class InterventionController {
                                              @RequestParam(defaultValue = "ACTION") String actionType,
                                              @RequestParam String content,
                                              @RequestParam(required = false) Long operatorId) {
+        requireTicketAccess(id);
         return Result.success(interventionService.appendLog(id, actionType, content, operatorId));
     }
 
@@ -89,6 +119,7 @@ public class InterventionController {
     @GetMapping("/tickets/{id}/logs")
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     public Result<List<InterventionLog>> logs(@PathVariable Long id) {
+        requireTicketAccess(id);
         return Result.success(interventionService.listLogs(id));
     }
 

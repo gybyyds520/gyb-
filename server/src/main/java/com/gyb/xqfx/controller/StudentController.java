@@ -10,6 +10,8 @@ import com.gyb.xqfx.model.vo.StudentVO;
 import com.gyb.xqfx.service.ExcelImportService;
 import com.gyb.xqfx.service.StudentService;
 import com.gyb.xqfx.util.MaskUtils;
+import com.gyb.xqfx.annotation.RequireRole;
+import com.gyb.xqfx.service.DataScopeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,16 +25,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * 学生管理
+ * 学生管理（仅教师与管理者可操作，数据范围按登录角色限定）
  */
 @Tag(name = "学情数据-学生")
 @RestController
 @RequestMapping("/student")
 @RequiredArgsConstructor
+@RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
 public class StudentController {
 
     private final StudentService studentService;
     private final ExcelImportService excelImportService;
+    private final DataScopeService dataScopeService;
 
     @Operation(summary = "分页查询学生")
     @GetMapping("/page")
@@ -53,7 +57,8 @@ public class StudentController {
         query.setClazzId(clazzId);
         query.setGrade(grade);
         query.setStatus(status);
-        return Result.success(PageResult.of(studentService.pageStudents(current, size, query, masked)));
+        return Result.success(PageResult.of(
+                studentService.pageStudents(current, size, query, masked, dataScopeService.scopeForQuery())));
     }
 
     @Operation(summary = "根据ID查询学生")
@@ -63,6 +68,7 @@ public class StudentController {
         if (s == null) {
             return Result.fail("学生不存在");
         }
+        dataScopeService.requireStudentAccess(id);
         StudentVO vo = new StudentVO();
         org.springframework.beans.BeanUtils.copyProperties(s, vo);
         vo.setPhoneMasked(MaskUtils.maskPhone(s.getPhone()));

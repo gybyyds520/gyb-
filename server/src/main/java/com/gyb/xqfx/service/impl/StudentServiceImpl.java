@@ -40,8 +40,13 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
     private final CollegeMapper collegeMapper;
 
     @Override
-    public IPage<StudentVO> pageStudents(long current, long size, StudentQuery query, boolean masked) {
+    public IPage<StudentVO> pageStudents(long current, long size, StudentQuery query, boolean masked,
+                                         List<Long> studentIds) {
         LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
+        // 数据范围：限定可见学生（and 包裹，避免与 keyword 的 or 组合混淆优先级）
+        if (studentIds != null && !studentIds.isEmpty()) {
+            wrapper.and(w -> w.in(Student::getId, studentIds));
+        }
         if (query != null) {
             wrapper.like(StringUtils.hasText(query.getKeyword()), Student::getStudentNo, query.getKeyword())
                     .or(StringUtils.hasText(query.getKeyword()))

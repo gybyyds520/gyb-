@@ -90,7 +90,7 @@ public class RealtimeDataSimulator {
                 attendanceMapper.insert(at);
                 attendance++;
 
-                // 2. 新在线行为
+                // 2. 新在线行为（按 学生+日期 幂等：当日已有记录则累计更新，避免唯一键冲突）
                 OnlineBehavior ob = new OnlineBehavior();
                 ob.setStudentId(s.getId());
                 ob.setCourseId(offerings.isEmpty() ? null
@@ -103,7 +103,26 @@ public class RealtimeDataSimulator {
                 ob.setResourceViewCount(random.nextInt(20));
                 ob.setForumPostCount(random.nextInt(3));
                 ob.setAssignmentSubmitCount(random.nextInt(3));
-                onlineBehaviorMapper.insert(ob);
+                OnlineBehavior existing = onlineBehaviorMapper.selectOne(
+                        new LambdaQueryWrapper<OnlineBehavior>()
+                                .eq(OnlineBehavior::getStudentId, s.getId())
+                                .eq(OnlineBehavior::getStatDate, today)
+                                .last("limit 1"));
+                if (existing != null) {
+                    existing.setLoginCount((existing.getLoginCount() == null ? 0 : existing.getLoginCount())
+                            + ob.getLoginCount());
+                    existing.setStudyMinutes((existing.getStudyMinutes() == null ? 0 : existing.getStudyMinutes())
+                            + ob.getStudyMinutes());
+                    existing.setResourceViewCount((existing.getResourceViewCount() == null
+                            ? 0 : existing.getResourceViewCount()) + ob.getResourceViewCount());
+                    existing.setForumPostCount((existing.getForumPostCount() == null
+                            ? 0 : existing.getForumPostCount()) + ob.getForumPostCount());
+                    existing.setAssignmentSubmitCount((existing.getAssignmentSubmitCount() == null
+                            ? 0 : existing.getAssignmentSubmitCount()) + ob.getAssignmentSubmitCount());
+                    onlineBehaviorMapper.updateById(existing);
+                } else {
+                    onlineBehaviorMapper.insert(ob);
+                }
                 behavior++;
 
                 // 3. 新预警（约 60% 概率触发，保证动态但不过量）

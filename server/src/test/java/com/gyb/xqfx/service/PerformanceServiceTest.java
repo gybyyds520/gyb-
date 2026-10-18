@@ -120,7 +120,7 @@ class PerformanceServiceTest {
                 record(1L, "5", "70", 1),
                 record(2L, "9", "95", 5)));
 
-        List<PerformanceVO> ranking = service.ranking(null, 0);
+        List<PerformanceVO> ranking = service.ranking(null, 0, null);
         assertEquals(2, ranking.size());
         assertEquals(2L, ranking.get(0).getStudentId());
         assertEquals("积极", ranking.get(0).getLevel());
@@ -134,7 +134,7 @@ class PerformanceServiceTest {
                 record(1L, "9", "90", 1),
                 record(2L, "8", "85", 1),
                 record(3L, "7", "80", 1)));
-        assertEquals(2, service.ranking(null, 2).size());
+        assertEquals(2, service.ranking(null, 2, null).size());
     }
 
     // ==================== 记录 ====================
