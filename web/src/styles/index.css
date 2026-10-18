@@ -1,0 +1,50 @@
+:root {
+  --xqfx-primary: #2f6fed;
+  --xqfx-bg: #f5f7fa;
+  --xqfx-sidebar-bg: #1f2b48;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--xqfx-bg);
+  color: #303133;
+}
+
+.page-container {
+  padding: 16px;
+}
+
+.stat-card {
+  border-radius: 8px;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* 移动端响应式：≤768px */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 8px;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
+  .hidden-mobile {
+    display: none !important;
+  }
+}

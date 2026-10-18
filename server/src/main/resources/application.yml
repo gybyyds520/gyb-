@@ -1,0 +1,94 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: xqfx-server
+  profiles:
+    active: dev
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/xqfx?useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_general_ci&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: '123456'
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+      timeout: 5s
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# ---- 自定义配置 ----
+xqfx:
+  # JWT
+  jwt:
+    secret: xqfx-ollama-graduation-project-secret-key-2026-please-change-in-production
+    expiration: 7200000        # 2 小时
+    refresh-expiration: 604800000  # 7 天
+  # Ollama 本地大模型
+  ollama:
+    base-url: http://127.0.0.1:11434
+    primary-model: llama3.2:3b
+    fallback-model: qwen2.5-coder:1.5b-base
+    # 命题对生成质量要求更高，练习题单独用规模更大的本地模型；不可用自动回落主模型
+    practice-model: llama3.1:8b
+    embed-model: nomic-embed-text:latest
+    timeout: 120s
+    stream: true
+    enabled: true
+    # 模型不可用时自动降级为规则化文本，保证功能可用
+    fallback-to-rule: true
+    fallback-to-cloud: false
+  # Python 预测推理微服务
+  ml:
+    base-url: http://127.0.0.1:8000
+  # 教务系统对接适配器（mock=内置演示数据源；接入真实教务系统时切换为对应实现）
+  acad:
+    provider: mock
+    mock-batch: 50
+  # 数据脱敏开关
+  privacy:
+    mask-phone: true
+    mask-id-card: true
+  # 文件上传
+  file:
+    upload-path: ./upload/
+
+logging:
+  level:
+    root: info
+    com.gyb.xqfx: debug
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

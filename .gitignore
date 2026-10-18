@@ -1,0 +1,46 @@
+# ===== 构建产物 =====
+.tools/
+target/
+dist/
+dist-electron/
+release/
+node_modules/
+*.log
+
+# ===== 编辑器 / IDE =====
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== 运行时数据 =====
+upload/
+logs/
+*.pkl
+*.onnx
+venv/
+.venv/
+__pycache__/
+.pytest_cache/
+
+# ===== 测试与覆盖率 =====
+coverage/
+test-results/
+playwright-report/
+.allure/
+
+# ===== 本地环境覆盖 =====
+.env.local
+application-local.yml
+
+# ===== Maven Wrapper 下载的发行版 =====
+.mvn/wrapper/maven-wrapper.jar
