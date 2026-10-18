@@ -48,3 +48,10 @@ application-local.yml
 .ocr_venv/
 
 upload/
+
+# 中间产物（不纳入版本库）
+ppt_work/
+server/tmp_e2e/
+audit_create_resp.txt
+audit_health.txt
+audit_run*.ps1
