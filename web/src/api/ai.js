@@ -73,6 +73,93 @@ export function saveTemplate(data) {
 }
 
 /**
+ * SSE 流式读取器（fetch + ReadableStream）：
+ * EventSource 无法携带 Authorization 头，而本项目 SSE 接口均在 JWT 鉴权之后，
+ * 使用 EventSource 会得到 401 并无限重连、前端永远停在“生成中”。
+ * 改为 fetch 流式读取即可携带 token，且能区分 message / meta / error / done 事件。
+ * @param {string} url SSE 地址（含 query）
+ * @param {object} handlers { onContent, onMeta, onDone, onError }
+ * @returns {AbortController} 可用于中断
+ */
+function createSseReader(url, { onContent, onMeta, onDone, onError } = {}) {
+  const ctrl = new AbortController()
+  const token = localStorage.getItem('xqfx_token')
+  ;(async () => {
+    try {
+      const resp = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal: ctrl.signal
+      })
+      if (!resp.ok) {
+        onError && onError(`请求失败（HTTP ${resp.status}）`)
+        onDone && onDone()
+        return
+      }
+      const reader = resp.body.getReader()
+      const decoder = new TextDecoder('utf-8')
+      let buf = ''
+      let finished = false
+
+      const handleEvent = (ev, data) => {
+        const trimmed = data.trim()
+        if (!trimmed) return
+        if (ev === 'done') {
+          finished = true
+          onDone && onDone()
+        } else if (ev === 'meta') {
+          try { onMeta && onMeta(JSON.parse(trimmed)) } catch { /* 忽略 */ }
+        } else if (ev === 'error') {
+          finished = true
+          onError && onError(trimmed)
+          onDone && onDone()
+        } else {
+          // 默认 message 事件
+          if (trimmed === '[DONE]') {
+            finished = true
+            onDone && onDone()
+            return
+          }
+          try {
+            const payload = JSON.parse(trimmed)
+            if (payload && payload.content) onContent && onContent(payload.content)
+            else if (payload && payload.error) onError && onError(payload.error)
+          } catch {
+            onContent && onContent(trimmed)
+          }
+        }
+      }
+
+      while (!ctrl.signal.aborted) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        let idx
+        while ((idx = buf.indexOf('\n\n')) >= 0) {
+          const block = buf.slice(0, idx)
+          buf = buf.slice(idx + 2)
+          let ev = 'message'
+          const dataLines = []
+          for (const line of block.split('\n')) {
+            if (line.startsWith('event:')) ev = line.slice(6).trim()
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim())
+          }
+          if (dataLines.length) handleEvent(ev, dataLines.join('\n'))
+          if (finished) break
+        }
+        if (finished) break
+      }
+      if (!finished && !ctrl.signal.aborted) onDone && onDone()
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        onError && onError(e?.message || String(e))
+        onDone && onDone()
+      }
+    }
+  })()
+  return ctrl
+}
+
+/**
  * 流式问答：通过 SSE 逐段接收
  * @param {object} params 问题参数
  * @param {(chunk:string)=>void} onChunk 片段回调
@@ -83,25 +170,10 @@ export function streamChat(params, onChunk, onDone) {
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') qs.append(k, v)
   })
-  const es = new EventSource(`/api/ai/chat/stream?${qs.toString()}`)
-  es.onmessage = (e) => {
-    if (e.data === '[DONE]') {
-      es.close()
-      onDone && onDone()
-      return
-    }
-    try {
-      const payload = JSON.parse(e.data)
-      if (payload.content) onChunk(payload.content)
-    } catch {
-      onChunk(e.data)
-    }
-  }
-  es.onerror = () => {
-    es.close()
-    onDone && onDone()
-  }
-  return es
+  return createSseReader(`/api/ai/chat/stream?${qs.toString()}`, {
+    onContent: onChunk,
+    onDone
+  })
 }
 
 /**
@@ -117,27 +189,10 @@ export function agentChatStream({ scene = 'CHAT', message = '', studentId, termI
   if (studentId) params.set('studentId', studentId)
   if (termId) params.set('termId', termId)
   if (userId) params.set('userId', userId)
-  const es = new EventSource(`/api/ai/agent/chat/stream?${params.toString()}`)
-  es.onmessage = (e) => {
-    try {
-      const data = JSON.parse(e.data)
-      if (data && data.content) onContent && onContent(data.content)
-    } catch {
-      onContent && onContent(e.data)
-    }
-  }
-  es.addEventListener('meta', (e) => {
-    try {
-      onMeta && onMeta(JSON.parse(e.data))
-    } catch { /* ignore */ }
+  return createSseReader(`/api/ai/agent/chat/stream?${params.toString()}`, {
+    onContent,
+    onMeta,
+    onDone,
+    onError
   })
-  es.addEventListener('error', (e) => {
-    if (e.data) onError && onError(e.data)
-    es.close()
-  })
-  es.addEventListener('done', () => {
-    es.close()
-    onDone && onDone()
-  })
-  return es
 }
