@@ -32,10 +32,10 @@ const routes = [
         meta: { title: '学生管理', code: 'STUDENT_LIST' }
       },
       {
-        path: 'homework',
-        name: 'Homework',
-        component: () => import('@/views/homework/HomeworkView.vue'),
-        meta: { title: '作业管理', code: 'HOMEWORK_TEACHER' }
+        path: 'scan',
+        name: 'PaperScan',
+        component: () => import('@/views/PaperScanView.vue'),
+        meta: { title: '试卷录入', code: 'PAPER_SCAN' }
       },
       {
         path: 'data/score',

@@ -1,0 +1,43 @@
+CREATE TABLE IF NOT EXISTS `paper_scan` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(128) NOT NULL COMMENT '试卷标题',
+  `file_name` varchar(255) DEFAULT NULL COMMENT '原始文件名',
+  `file_type` varchar(16) DEFAULT NULL COMMENT 'IMAGE/PDF/WORD',
+  `file_path` varchar(512) DEFAULT NULL COMMENT '本地存储路径',
+  `method` varchar(16) DEFAULT NULL COMMENT '提取方式 PDF_TEXT/PDF_OCR/DOCX/IMAGE_OCR',
+  `ocr_text` mediumtext COMMENT '识别出的全文',
+  `status` varchar(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING待解析/PARSED已解析/REVIEWED已确认入库/FAILED失败',
+  `question_count` int NOT NULL DEFAULT '0' COMMENT '解析题目数',
+  `ai_summary` text COMMENT 'AI试卷分析',
+  `difficulty` decimal(4,2) DEFAULT NULL COMMENT 'AI评估难度',
+  `error_msg` varchar(512) DEFAULT NULL,
+  `creator_id` bigint DEFAULT NULL COMMENT '录入教师',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_deleted` tinyint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_scan_creator` (`creator_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='试卷录入记录';
+
+CREATE TABLE IF NOT EXISTS `question_bank` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `scan_id` bigint DEFAULT NULL COMMENT '来源录入批次',
+  `course_id` bigint DEFAULT NULL,
+  `course_name` varchar(64) DEFAULT NULL,
+  `question_no` varchar(16) DEFAULT NULL COMMENT '题号',
+  `question_type` varchar(32) DEFAULT NULL COMMENT '题型 SINGLE/MULTI/FILL/JUDGE/ESSAY',
+  `stem` text COMMENT '题干',
+  `options_json` text COMMENT '选项JSON数组',
+  `answer` text COMMENT '参考答案',
+  `analysis` text COMMENT '解析',
+  `score` decimal(5,2) DEFAULT NULL COMMENT '分值',
+  `knowledge_point` varchar(128) DEFAULT NULL COMMENT '知识点',
+  `difficulty` varchar(16) DEFAULT NULL COMMENT '易/中/难',
+  `status` varchar(16) NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE/DISABLED',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_deleted` tinyint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_bank_scan` (`scan_id`),
+  KEY `idx_bank_kp` (`knowledge_point`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='题库(试卷录入解析)';

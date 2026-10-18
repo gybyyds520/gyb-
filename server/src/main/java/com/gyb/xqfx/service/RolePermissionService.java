@@ -56,6 +56,7 @@ public class RolePermissionService {
     public static final String BIG_SCREEN = "BIG_SCREEN";
     public static final String MONITOR = "MONITOR";
     public static final String HOMEWORK_TEACHER = "HOMEWORK_TEACHER";
+    public static final String PAPER_SCAN = "PAPER_SCAN";
 
     /** 学生端与家长端角色 */
     public static final Set<String> STUDENT_ROLES = Set.of("STUDENT");
@@ -116,6 +117,7 @@ public class RolePermissionService {
         // 监察中心：仅超级管理员，可监察三端内容与数据
         MATRIX.put(MONITOR, Set.of("ADMIN"));
         MATRIX.put(HOMEWORK_TEACHER, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"));
+        MATRIX.put(PAPER_SCAN, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"));
 
         // code -> { 名称, 路由, 分组 }
         // 分组体系（按功能作用归类，三端共用语义，前端按端渲染结构与标题）：
@@ -159,6 +161,7 @@ public class RolePermissionService {
         MENU.put(SYS, new String[]{"系统管理", "/sys", "sys"});
         MENU.put(MONITOR, new String[]{"监察中心", "/monitor", "sys"});
         MENU.put(HOMEWORK_TEACHER, new String[]{"作业管理", "/homework", "data"});
+        MENU.put(PAPER_SCAN, new String[]{"试卷录入", "/scan", "data"});
     }
 
     /**

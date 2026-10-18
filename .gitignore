@@ -44,3 +44,7 @@ application-local.yml
 
 # ===== Maven Wrapper 下载的发行版 =====
 .mvn/wrapper/maven-wrapper.jar
+
+.ocr_venv/
+
+upload/
