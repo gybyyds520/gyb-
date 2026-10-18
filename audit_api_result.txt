@@ -1,0 +1,20 @@
+后端路由总数: 202
+前端 API 调用总数: 202
+匹配: 196
+未匹配(疑似空壳): 6
+
+=== 未匹配明细 ===
+ai.js                addKnowledge                     POST   /ai/knowledge?docName=${encodeURIComponent(docName)}&docType=${docType}
+homework.js          createHomework                   POST   /homework
+mistake.js           addMistake                       POST   /mistake
+performance.js       recordPerformance                POST   /performance
+student.js           addStudent                       POST   /student
+student.js           updateStudent                    PUT    /student
+
+=== 后端有但前端未调用: 6 ===
+GET    /ai/logs
+POST   /auth/refresh
+GET    /course-space/materials/{p}/file
+GET    /score/template
+GET    /student/template
+GET    /sys/configs/{p}
