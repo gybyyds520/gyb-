@@ -81,8 +81,8 @@ public class HomeworkService {
         if (title == null || title.isBlank()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "请输入测验标题");
         }
-        if (clazzId == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "请选择测验班级");
+        if (clazzId == null && offeringId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请选择测验班级或教学班");
         }
         if (questions == null || questions.isEmpty()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "请至少添加一道题目");

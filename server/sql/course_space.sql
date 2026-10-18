@@ -62,3 +62,6 @@ CREATE TABLE IF NOT EXISTS `course_discussion_reply` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='课程讨论回复';
 
 ALTER TABLE `homework` ADD COLUMN `course_offering_id` bigint DEFAULT NULL COMMENT '归属教学班(章节测验)' AFTER `course_id`;
+
+-- 章节测验可归属教学班（无班级维度），允许 clazz_id 为空
+ALTER TABLE `homework` MODIFY COLUMN `clazz_id` bigint DEFAULT NULL COMMENT '所属班级';

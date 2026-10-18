@@ -494,18 +494,22 @@ async function publishQuiz() {
   if (!quizForm.value.questions.length) return ElMessage.warning('请至少添加一道题目')
   const course = courses.value.find((c) => c.offeringId === activeOffering.value)
   const questions = quizForm.value.questions.map((q, i) => ({ ...q, no: String(i + 1) }))
-  await createHomework({
-    title: quizForm.value.title,
-    courseId: course?.courseId || null,
-    courseName: course?.courseName || '',
-    clazzId: null,
-    courseOfferingId: activeOffering.value,
-    questions,
-    deadline: quizForm.value.deadline
-  })
-  ElMessage.success('测验已发布，学生可在课程空间作答')
-  quizDialog.value.visible = false
-  loadQuizzes()
+  try {
+    await createHomework({
+      title: quizForm.value.title,
+      courseId: course?.courseId || null,
+      courseName: course?.courseName || '',
+      clazzId: null,
+      courseOfferingId: activeOffering.value,
+      questions,
+      deadline: quizForm.value.deadline
+    })
+    ElMessage.success('测验已发布，学生可在课程空间作答')
+    quizDialog.value.visible = false
+    loadQuizzes()
+  } catch (e) {
+    ElMessage.error('发布失败：' + (e?.message || e))
+  }
 }
 
 async function openAnswer(row, readonly = false) {
