@@ -18,3 +18,12 @@ export function permissionMatrix() {
 export function getCurrentUser() {
   return request.get('/auth/me')
 }
+
+/**
+ * 自助注册（家长 / 学生，按学校档案核验身份后开通账号）
+ * @param {object} data { registerType: 'STUDENT'|'PARENT', studentNo, name, phone,
+ *                        parentName?, relation?, parentPhone?, password }
+ */
+export function register(data) {
+  return request.post('/auth/register', data)
+}

@@ -9,6 +9,12 @@ const routes = [
     meta: { public: true, title: '登录' }
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/RegisterView.vue'),
+    meta: { public: true, title: '注册' }
+  },
+  {
     path: '/',
     component: () => import('@/layout/index.vue'),
     redirect: '/dashboard',

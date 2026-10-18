@@ -7,6 +7,7 @@ import com.gyb.xqfx.common.Result;
 import com.gyb.xqfx.entity.SysUser;
 import com.gyb.xqfx.mapper.SysUserMapper;
 import com.gyb.xqfx.security.JwtTokenProvider;
+import com.gyb.xqfx.service.RegisterService;
 import com.gyb.xqfx.service.RolePermissionService;
 import com.gyb.xqfx.service.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,6 +51,7 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final RoleService roleService;
     private final RolePermissionService rolePermissionService;
+    private final RegisterService registerService;
 
     @Data
     public static class LoginRequest {
@@ -60,6 +62,72 @@ public class AuthController {
 
         /** 登录入口: TEACHER教师端 / STUDENT学生端 / PARENT家长端 */
         private String loginType;
+    }
+
+    /** 自助注册请求 */
+    @Data
+    public static class RegisterRequest {
+        /** 注册类型: STUDENT学生 / PARENT家长（教师与管理员不开放自助注册） */
+        @NotBlank(message = "请选择注册身份")
+        private String registerType;
+
+        /** 学生学号 */
+        @NotBlank(message = "请输入学生学号")
+        private String studentNo;
+
+        /** 学生姓名（核验用） */
+        @NotBlank(message = "请输入学生姓名")
+        private String name;
+
+        /** 学生手机号（核验用） */
+        @NotBlank(message = "请输入学生手机号")
+        private String phone;
+
+        /** 家长姓名（家长注册必填） */
+        private String parentName;
+
+        /** 家长与学生关系: FATHER / MOTHER / GUARDIAN */
+        private String relation;
+
+        /** 家长联系电话 */
+        private String parentPhone;
+
+        /** 登录密码（6-32 位） */
+        @NotBlank(message = "请设置登录密码")
+        private String password;
+    }
+
+    @Operation(summary = "自助注册（家长 / 学生，按学校档案核验身份）")
+    @PostMapping("/register")
+    public Result<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
+        String type = request.getRegisterType() == null ? "" : request.getRegisterType().trim().toUpperCase();
+        Long userId;
+        String username;
+        String userType;
+        if ("STUDENT".equals(type)) {
+            userId = registerService.registerStudent(
+                    request.getStudentNo(), request.getName(), request.getPhone(), request.getPassword());
+            username = request.getStudentNo().trim();
+            userType = "STUDENT";
+        } else if ("PARENT".equals(type)) {
+            if (request.getParentName() == null || request.getParentName().isBlank()) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "请输入家长姓名");
+            }
+            userId = registerService.registerParent(
+                    request.getStudentNo(), request.getName(), request.getPhone(),
+                    request.getParentName(), request.getRelation(), request.getParentPhone(),
+                    request.getPassword());
+            username = request.getStudentNo().trim() + "P1";
+            userType = "PARENT";
+        } else {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "注册身份仅支持 STUDENT / PARENT，教师账号请联系管理员开通");
+        }
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("userId", userId);
+        data.put("username", username);
+        data.put("userType", userType);
+        return Result.success(data, "注册成功，请使用新账号登录");
     }
 
     @Operation(summary = "登录（需选择教师端/学生端/家长端入口）")

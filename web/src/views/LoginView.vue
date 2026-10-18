@@ -42,6 +42,11 @@
         </el-button>
       </el-form>
 
+      <div class="register-entry">
+        <span>没有账号？</span>
+        <el-link type="primary" :underline="false" @click="goRegister">学生 / 家长自助注册</el-link>
+      </div>
+
       <el-alert
         class="login-tip"
         type="warning"
@@ -102,13 +107,19 @@ const userStore = useUserStore()
 
 const formRef = ref()
 const loading = ref(false)
-const form = reactive({ username: 'admin', password: 'admin123', loginType: 'TEACHER' })
+// 从注册页跳转时可预选登录端（type=STUDENT / PARENT）
+const initialType = ['STUDENT', 'PARENT'].includes(route.query.type) ? route.query.type : 'TEACHER'
+const form = reactive({ username: 'admin', password: 'admin123', loginType: initialType })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
 const entry = computed(() => ENTRIES[form.loginType] || ENTRIES.TEACHER)
+
+function goRegister() {
+  router.push('/register')
+}
 
 async function handleLogin() {
   await formRef.value.validate(async (valid) => {
@@ -188,6 +199,13 @@ async function handleLogin() {
 
 .login-btn {
   width: 100%;
+}
+
+.register-entry {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #606266;
 }
 
 .login-tip {
