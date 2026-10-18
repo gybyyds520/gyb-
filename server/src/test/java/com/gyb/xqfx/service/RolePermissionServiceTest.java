@@ -79,9 +79,9 @@ class RolePermissionServiceTest {
         List<Map<String, String>> menus = service.visibleMenus("STUDENT");
         List<String> codes = menus.stream().map(m -> m.get("code")).toList();
         assertEquals(List.of(RolePermissionService.MY_STUDY,
+                RolePermissionService.VIP, RolePermissionService.AGENT,
                 RolePermissionService.NOTIFY, RolePermissionService.MESSAGE,
-                RolePermissionService.VIP, RolePermissionService.GOAL,
-                RolePermissionService.TODO, RolePermissionService.AGENT), codes);
+                RolePermissionService.TODO, RolePermissionService.GOAL), codes);
     }
 
     @Test
@@ -109,8 +109,8 @@ class RolePermissionServiceTest {
         List<Map<String, String>> menus = service.visibleMenus("PARENT");
         List<String> codes = menus.stream().map(m -> m.get("code")).toList();
         assertEquals(List.of(RolePermissionService.PARENT_PORTAL,
-                RolePermissionService.NOTIFY, RolePermissionService.MESSAGE,
-                RolePermissionService.VIP, RolePermissionService.TODO), codes);
+                RolePermissionService.VIP, RolePermissionService.NOTIFY,
+                RolePermissionService.MESSAGE, RolePermissionService.TODO), codes);
     }
 
     @Test

@@ -22,10 +22,18 @@
             <template #title>{{ item.name }}</template>
           </el-menu-item>
         </template>
-        <el-sub-menu v-for="g in groupMenus" :key="g.group" :index="g.group">
+        <el-sub-menu v-for="g in groupMenus" :key="g.key" :index="g.key">
           <template #title>
             <el-icon><component :is="iconOf(g.items[0].code)" /></el-icon>
             <span>{{ g.title }}</span>
+          </template>
+          <el-menu-item v-for="m in g.items" :key="m.path" :index="m.path">{{ m.name }}</el-menu-item>
+        </el-sub-menu>
+        <!-- 兜底：后端新功能自动按原分组展示，防止遗漏 -->
+        <el-sub-menu v-for="g in extraGroups" :key="'x-' + g.key" :index="'x-' + g.key">
+          <template #title>
+            <el-icon><component :is="iconOf(g.items[0].code)" /></el-icon>
+            <span>{{ GROUP_TITLES[g.key] || g.title }}</span>
           </template>
           <el-menu-item v-for="m in g.items" :key="m.path" :index="m.path">{{ m.name }}</el-menu-item>
         </el-sub-menu>
@@ -84,6 +92,89 @@ const isMobile = ref(false)
 const activeMenu = computed(() => route.path)
 const pageTitle = computed(() => route.meta.title || '学情总览')
 
+/**
+ * 端级菜单布局：按功能作用归类，教师/管理端、学生端、家长端各自成组。
+ * 结构以功能编码为准（与后端 RolePermissionService.MENU 对应），
+ * 后端仍负责"角色可见哪些功能"，本表只负责"如何归类展示"。
+ */
+const END_LAYOUT = {
+  // 学生端：个人学情门户
+  STUDENT: {
+    top: ['MY_STUDY', 'VIP'],
+    groups: [
+      { key: 'learn', title: '学习助手', codes: ['AGENT', 'GOAL', 'TODO'] },
+      { key: 'msg', title: '消息中心', codes: ['NOTIFY', 'MESSAGE'] }
+    ]
+  },
+  // 家长端：家校协同门户
+  PARENT: {
+    top: ['PARENT_PORTAL', 'VIP'],
+    groups: [
+      { key: 'msg', title: '消息中心', codes: ['NOTIFY', 'MESSAGE', 'TODO'] }
+    ]
+  },
+  // 教师/管理端：学情治理工作台
+  DEFAULT: {
+    top: ['DASHBOARD', 'BIG_SCREEN'],
+    groups: [
+      { key: 'data', title: '学情数据', codes: ['STUDENT_LIST', 'SCORE_LIST', 'EXAM', 'CLAZZ', 'QUALITY', 'DEMO_DATA'] },
+      { key: 'analysis', title: '学情分析', codes: ['PROFILE', 'AI', 'AGENT', 'MODEL'] },
+      { key: 'warning', title: '预测预警', codes: ['PREDICTION', 'WARNING', 'INTERVENTION', 'GOVERNANCE', 'ACADEMIC'] },
+      { key: 'collab', title: '协同沟通', codes: ['NOTIFY', 'MESSAGE', 'TODO', 'GOAL'] },
+      { key: 'sys', title: '系统管理', codes: ['ACAD', 'SYS', 'MONITOR'] }
+    ]
+  }
+}
+
+/** 后端下发菜单按 code 索引，便于按布局结构取名称与路由 */
+const menuByCode = (code) => (userStore.menus || []).find((m) => m.code === code)
+
+/** 当前端布局配置（未知角色回退教师端结构） */
+const layoutFor = computed(() => END_LAYOUT[userStore.userType] || END_LAYOUT.DEFAULT)
+
+/** 顶级菜单项：布局指定的顶级项（仅保留当前角色可见的） */
+const layoutTop = computed(() =>
+  layoutFor.value.top.map(menuByCode).filter(Boolean)
+)
+
+/** 分组菜单：布局分组的可见项；组内仅 1 项时提升为顶级，避免孤零子菜单 */
+const layoutGroups = computed(() => {
+  const topExtra = []
+  const groups = []
+  for (const g of layoutFor.value.groups) {
+    const items = g.codes.map(menuByCode).filter(Boolean)
+    if (!items.length) continue
+    // 单项目提升为顶级菜单项
+    if (items.length === 1) {
+      topExtra.push(items[0])
+      continue
+    }
+    groups.push({ key: g.key, title: g.title, items })
+  }
+  return { topExtra, groups }
+})
+
+/** 最终顶级菜单：布局顶级 + 单项目提升 */
+const topMenus = computed(() => [...layoutTop.value, ...layoutGroups.value.topExtra])
+
+/** 最终分组菜单 */
+const groupMenus = computed(() => layoutGroups.value.groups)
+
+/** 兜底：后端新下发的、布局尚未登记的功能，按原分组追加为子菜单，保证不漏菜单 */
+const extraGroups = computed(() => {
+  const known = new Set([
+    ...layoutFor.value.top,
+    ...layoutFor.value.groups.flatMap((g) => g.codes)
+  ])
+  const byGroup = {}
+  for (const m of userStore.menus || []) {
+    if (known.has(m.code)) continue
+    if (!byGroup[m.group]) byGroup[m.group] = { key: m.group, title: m.group, items: [] }
+    byGroup[m.group].items.push(m)
+  }
+  return Object.values(byGroup)
+})
+
 /** 分组标题与图标映射 */
 const GROUP_TITLES = {
   data: '学情数据',
@@ -114,28 +205,19 @@ const ICONS = {
   QUALITY: 'DataAnalysis',
   ACADEMIC: 'Medal',
   GOVERNANCE: 'Setting',
-  SYS: 'Tools'
+  SYS: 'Tools',
+  GOAL: 'Aim',
+  TODO: 'Finished',
+  ACAD: 'Link',
+  MODEL: 'Cpu',
+  AGENT: 'ChatLineSquare',
+  BIG_SCREEN: 'DataBoard',
+  MONITOR: 'Monitor'
 }
 
 function iconOf(code) {
   return ICONS[code] || 'Menu'
 }
-
-/** 顶级菜单项（main 分组） */
-const topMenus = computed(() =>
-  (userStore.menus || []).filter((m) => m.group === 'main')
-)
-
-/** 子菜单分组 */
-const groupMenus = computed(() => {
-  const groups = {}
-  for (const m of userStore.menus || []) {
-    if (m.group === 'main') continue
-    if (!groups[m.group]) groups[m.group] = { group: m.group, title: GROUP_TITLES[m.group] || m.group, items: [] }
-    groups[m.group].items.push(m)
-  }
-  return Object.values(groups)
-})
 
 function toggleCollapse() {
   isCollapse.value = !isCollapse.value

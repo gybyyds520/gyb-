@@ -115,34 +115,47 @@ public class RolePermissionService {
         // 监察中心：仅超级管理员，可监察三端内容与数据
         MATRIX.put(MONITOR, Set.of("ADMIN"));
 
-        // code -> { 名称, 路由, 图标分组 }
+        // code -> { 名称, 路由, 分组 }
+        // 分组体系（按功能作用归类，三端共用语义，前端按端渲染结构与标题）：
+        //   main      顶级入口（各端首页 / 大屏 / 会员中心）
+        //   data      学情数据
+        //   analysis  学情分析
+        //   warning   预测预警
+        //   collab    协同沟通
+        //   sys       系统管理
+        // 此处 put 顺序即各端 visibleMenus 下发顺序（决定分组展示次序）
         MENU.put(DASHBOARD, new String[]{"学情总览", "/dashboard", "main"});
         MENU.put(MY_STUDY, new String[]{"我的学情", "/my", "main"});
         MENU.put(PARENT_PORTAL, new String[]{"家校协同", "/parent", "main"});
+        MENU.put(VIP, new String[]{"会员中心", "/vip", "main"});
+        MENU.put(BIG_SCREEN, new String[]{"校级大屏", "/bigscreen", "main"});
+        // —— 学情数据 ——
         MENU.put(STUDENT_LIST, new String[]{"学生管理", "/data/student", "data"});
         MENU.put(SCORE_LIST, new String[]{"成绩管理", "/data/score", "data"});
+        MENU.put(EXAM, new String[]{"试卷分析", "/exam", "data"});
+        MENU.put(CLAZZ, new String[]{"班级学情", "/clazz", "data"});
+        MENU.put(QUALITY, new String[]{"数据质量", "/quality", "data"});
         MENU.put(DEMO_DATA, new String[]{"演示数据", "/data/demo", "data"});
-        MENU.put(PREDICTION, new String[]{"学业预测", "/prediction", "prediction"});
-        MENU.put(WARNING, new String[]{"学业预警", "/warning", "prediction"});
-        MENU.put(INTERVENTION, new String[]{"干预闭环", "/intervention", "prediction"});
-        MENU.put(AI, new String[]{"AI 学情分析", "/ai", "prediction"});
-        MENU.put(PROFILE, new String[]{"学生画像", "/profile", "profile"});
-        MENU.put(NOTIFY, new String[]{"通知中心", "/notify", "main"});
-        MENU.put(MESSAGE, new String[]{"站内通讯", "/message", "main"});
-        MENU.put(VIP, new String[]{"会员中心", "/vip", "main"});
-        MENU.put(EXAM, new String[]{"试卷分析", "/exam", "analysis"});
-        MENU.put(CLAZZ, new String[]{"班级学情", "/clazz", "analysis"});
-        MENU.put(QUALITY, new String[]{"数据质量", "/quality", "analysis"});
-        MENU.put(ACADEMIC, new String[]{"学业指标", "/academic", "governance"});
-        MENU.put(GOVERNANCE, new String[]{"预警治理", "/governance", "governance"});
+        // —— 学情分析 ——
+        MENU.put(PROFILE, new String[]{"学生画像", "/profile", "analysis"});
+        MENU.put(AI, new String[]{"AI 学情分析", "/ai", "analysis"});
+        MENU.put(AGENT, new String[]{"学情智能体", "/agent", "analysis"});
+        MENU.put(MODEL, new String[]{"模型管理", "/model", "analysis"});
+        // —— 预测预警 ——
+        MENU.put(PREDICTION, new String[]{"学业预测", "/prediction", "warning"});
+        MENU.put(WARNING, new String[]{"学业预警", "/warning", "warning"});
+        MENU.put(INTERVENTION, new String[]{"干预闭环", "/intervention", "warning"});
+        MENU.put(GOVERNANCE, new String[]{"预警治理", "/governance", "warning"});
+        MENU.put(ACADEMIC, new String[]{"学业指标", "/academic", "warning"});
+        // —— 协同沟通 ——
+        MENU.put(NOTIFY, new String[]{"通知中心", "/notify", "collab"});
+        MENU.put(MESSAGE, new String[]{"站内通讯", "/message", "collab"});
+        MENU.put(TODO, new String[]{"待办中心", "/todo", "collab"});
+        MENU.put(GOAL, new String[]{"学习目标", "/goal", "collab"});
+        // —— 系统管理 ——
+        MENU.put(ACAD, new String[]{"教务对接", "/acad", "sys"});
         MENU.put(SYS, new String[]{"系统管理", "/sys", "sys"});
-        MENU.put(GOAL, new String[]{"学习目标", "/goal", "main"});
-        MENU.put(TODO, new String[]{"待办中心", "/todo", "main"});
-        MENU.put(ACAD, new String[]{"教务对接", "/acad", "main"});
-        MENU.put(MODEL, new String[]{"模型管理", "/model", "main"});
-        MENU.put(AGENT, new String[]{"学情智能体", "/agent", "main"});
-        MENU.put(BIG_SCREEN, new String[]{"校级大屏", "/bigscreen", "main"});
-        MENU.put(MONITOR, new String[]{"监察中心", "/monitor", "main"});
+        MENU.put(MONITOR, new String[]{"监察中心", "/monitor", "sys"});
     }
 
     /**
