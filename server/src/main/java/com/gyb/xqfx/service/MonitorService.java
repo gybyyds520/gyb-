@@ -1,6 +1,9 @@
 package com.gyb.xqfx.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.gyb.xqfx.common.PageResult;
 import com.gyb.xqfx.entity.*;
 import com.gyb.xqfx.mapper.*;
 import com.gyb.xqfx.model.vo.MonitorVO;
@@ -11,9 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,6 +46,10 @@ public class MonitorService {
     private final ClazzMapper clazzMapper;
     private final MajorMapper majorMapper;
     private final CollegeMapper collegeMapper;
+    private final CourseMapper courseMapper;
+    private final CourseOfferingMapper courseOfferingMapper;
+    private final AttendanceMapper attendanceMapper;
+    private final OnlineBehaviorMapper onlineBehaviorMapper;
 
     /** 三端 + 系统概览 */
     public MonitorVO.Overview overview() {
@@ -150,6 +155,10 @@ public class MonitorService {
         p.setMessageCount(imMessageMapper.selectCount(null));
         p.setTicketCount(interventionTicketMapper.selectCount(
                 new LambdaQueryWrapper<InterventionTicket>().eq(InterventionTicket::getStudentId, studentId)));
+        p.setAttendanceCount(attendanceMapper.selectCount(
+                new LambdaQueryWrapper<Attendance>().eq(Attendance::getStudentId, studentId)));
+        p.setBehaviorCount(onlineBehaviorMapper.selectCount(
+                new LambdaQueryWrapper<OnlineBehavior>().eq(OnlineBehavior::getStudentId, studentId)));
         p.setLatestPredictions(items(predictionResultMapper.selectList(new LambdaQueryWrapper<PredictionResult>()
                         .eq(PredictionResult::getStudentId, studentId)
                         .orderByDesc(PredictionResult::getRiskProbability).last("limit 5")),
@@ -161,6 +170,279 @@ public class MonitorService {
     }
 
     // ==================== 内部工具 ====================
+
+    /**
+     * 全量记录分页：管理员可查看任意端任意维度的全部数据（至高无上权限）。
+     */
+    public PageResult<MonitorVO.RecordRow> records(String dimension, long current, long size) {
+        String dim = dimension == null ? "warning" : dimension;
+        return switch (dim) {
+            case "warning" -> pageRows(warningRecordMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<WarningRecord>().orderByDesc(WarningRecord::getId)),
+                    w -> row(w.getId(), w.getWarningNo(), studentName(w.getStudentId()) + " · " + w.getTitle(),
+                            levelText(w.getWarningLevel()) + " " + w.getWarningType(), w.getStatus(),
+                            fmt(w.getCreateTime())));
+            case "ticket" -> pageRows(interventionTicketMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<InterventionTicket>().orderByDesc(InterventionTicket::getId)),
+                    t -> row(t.getId(), t.getTicketNo(), studentName(t.getStudentId()) + " · " + brief(t.getPlan()),
+                            t.getStatus(), "", fmt(t.getCreateTime())));
+            case "feedback" -> pageRows(parentFeedbackMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<ParentFeedback>().orderByDesc(ParentFeedback::getId)),
+                    f -> row(f.getId(), f.getBizType() + "#" + f.getBizId(), studentName(f.getStudentId()) + " 家长回执",
+                            f.getAckStatus(), brief(f.getContent()), fmt(f.getCreateTime())));
+            case "message" -> pageRows(imMessageMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<ImMessage>().orderByDesc(ImMessage::getId)),
+                    m -> row(m.getId(), null, "发送人#" + m.getSenderId() + " → 接收人#" + m.getReceiverId(),
+                            m.getIsRead() != null && m.getIsRead() == 1 ? "已读" : "未读", brief(m.getContent()),
+                            fmt(m.getCreateTime())));
+            case "notify" -> pageRows(notifyMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<NotifyMessage>().orderByDesc(NotifyMessage::getId)),
+                    n -> row(n.getId(), n.getBizType() + "#" + n.getBizId(), n.getTitle(),
+                            n.getMessageType(), brief(n.getContent()), fmt(n.getCreateTime())));
+            case "ai" -> pageRows(aiCallLogMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<AiCallLog>().orderByDesc(AiCallLog::getId)),
+                    c -> row(c.getId(), null, c.getBizType() + " · " + c.getModelName(),
+                            c.getStatus(), c.getTotalTokens() == null ? "" : (c.getTotalTokens() + " tokens"),
+                            fmt(c.getCreateTime())));
+            case "audit" -> pageRows(auditLogMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<AuditLog>().orderByDesc(AuditLog::getId)),
+                    a -> row(a.getId(), null, a.getUsername() + " " + a.getModule() + "·" + a.getOperation(),
+                            a.getSuccess() != null && a.getSuccess() == 1 ? "成功" : "失败",
+                            a.getCostMs() == null ? "" : (a.getCostMs() + "ms"), fmt(a.getCreateTime())));
+            case "goal" -> pageRows(goalMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<LearningGoal>().orderByDesc(LearningGoal::getId)),
+                    g -> row(g.getId(), g.getGoalType(), studentName(g.getStudentId()) + " · " + g.getGoalType() + "目标",
+                            g.getStatus(), g.getTargetValue() == null ? "" : ("目标 " + g.getTargetValue().toPlainString()),
+                            fmt(g.getCreateTime())));
+            case "prediction" -> pageRows(predictionResultMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<PredictionResult>().orderByDesc(PredictionResult::getId)),
+                    p -> row(p.getId(), null, studentName(p.getStudentId()) + " 风险" + p.getRiskLevel(),
+                            p.getRiskProbability() == null ? "" : ("概率 " + p.getRiskProbability().toPlainString()),
+                            p.getTermId() == null ? "" : ("学期 " + p.getTermId()), fmt(p.getCreateTime())));
+            case "score" -> pageRows(scoreMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<Score>().orderByDesc(Score::getId)),
+                    s -> row(s.getId(), null, studentName(s.getStudentId()) + " · " + courseName(s.getCourseId()),
+                            s.getTotalScore() == null ? "" : s.getTotalScore().toPlainString(),
+                            s.getExamStatus() == null ? "" : s.getExamStatus(), fmt(s.getCreateTime())));
+            case "attendance" -> pageRows(attendanceMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<Attendance>().orderByDesc(Attendance::getId)),
+                    a -> row(a.getId(), null, studentName(a.getStudentId()) + " " + a.getPeriod(),
+                            a.getStatus(), a.getCheckDate() == null ? "" : a.getCheckDate().toString(),
+                            fmt(a.getCreateTime())));
+            case "behavior" -> pageRows(onlineBehaviorMapper.selectPage(new Page<>(current, size),
+                            new LambdaQueryWrapper<OnlineBehavior>().orderByDesc(OnlineBehavior::getId)),
+                    b -> row(b.getId(), null, studentName(b.getStudentId()) + " · 登录" + b.getLoginCount()
+                            + " · 学习" + b.getStudyMinutes() + "min", "",
+                            b.getVideoProgress() == null ? "" : ("进度 " + b.getVideoProgress().toPlainString() + "%"),
+                            fmt(b.getCreateTime())));
+            default -> new PageResult<>();
+        };
+    }
+
+    /**
+     * 三端全部账号（学生端/教师端/家长端），供管理员选择任意账号查看全景。
+     */
+    public List<MonitorVO.Account> accounts(String role) {
+        String r = role == null ? "STUDENT" : role;
+        return switch (r) {
+            case "TEACHER" -> teacherMapper.selectList(null).stream().map(t -> {
+                MonitorVO.Account a = new MonitorVO.Account();
+                a.setId(t.getId());
+                a.setUserId(t.getUserId());
+                a.setNo(t.getTeacherNo());
+                a.setName(t.getName());
+                a.setExtra("教师");
+                return a;
+            }).collect(Collectors.toList());
+            case "PARENT" -> {
+                Map<Long, String> studentName = studentNameMap();
+                yield studentParentMapper.selectList(
+                                new LambdaQueryWrapper<StudentParent>().orderByAsc(StudentParent::getId)).stream()
+                        .collect(Collectors.toMap(StudentParent::getParentUserId, Function.identity(), (a, b) -> a))
+                        .values().stream()
+                        .map(p -> {
+                            MonitorVO.Account a = new MonitorVO.Account();
+                            a.setId(p.getParentUserId());
+                            a.setUserId(p.getParentUserId());
+                            a.setNo("");
+                            a.setName(p.getParentName() == null ? ("家长#" + p.getParentUserId()) : p.getParentName());
+                            a.setExtra((p.getRelation() == null ? "" : p.getRelation())
+                                    + (studentName.get(p.getStudentId()) == null ? ""
+                                    : (" · " + studentName.get(p.getStudentId()))));
+                            return a;
+                        }).collect(Collectors.toList());
+            }
+            default -> studentMapper.selectList(null).stream().map(s -> {
+                MonitorVO.Account a = new MonitorVO.Account();
+                a.setId(s.getId());
+                a.setUserId(s.getUserId());
+                a.setNo(s.getStudentNo());
+                a.setName(s.getName());
+                Clazz cz = s.getClazzId() == null ? null : clazzMapper.selectById(s.getClazzId());
+                a.setExtra(cz == null ? "" : (cz.getClazzName() + (cz.getGrade() == null ? "" : " · " + cz.getGrade())));
+                return a;
+            }).collect(Collectors.toList());
+        };
+    }
+
+    /**
+     * 任意账号数据全景：管理员以至高无上权限查看该账号的全部信息与功能。
+     */
+    public MonitorVO.AccountDetail accountDetail(Long id) {
+        MonitorVO.AccountDetail d = new MonitorVO.AccountDetail();
+        d.setId(id);
+        SysUser u = sysUserMapper.selectById(id);
+        if (u != null) {
+            d.setName(u.getRealName() == null ? u.getUsername() : u.getRealName());
+            d.setNo(u.getUsername());
+            d.setRole(u.getUserType());
+            if ("STUDENT".equals(u.getUserType()) && u.getStudentId() != null) {
+                fillStudentDetail(d, u.getStudentId());
+                return d;
+            }
+            if ("TEACHER".equals(u.getUserType()) && u.getTeacherId() != null) {
+                fillTeacherDetail(d, u.getTeacherId());
+                return d;
+            }
+            if ("PARENT".equals(u.getUserType())) {
+                fillParentDetail(d, u.getId());
+                return d;
+            }
+            // 管理岗账号：直接给系统概览信息
+            MonitorVO.AccountStat st = new MonitorVO.AccountStat();
+            st.setActiveWarning(warningRecordMapper.selectCount(
+                    new LambdaQueryWrapper<WarningRecord>().eq(WarningRecord::getStatus, "ACTIVE")));
+            d.setStat(st);
+            return d;
+        }
+        // 非 sys_user 主键时，尝试按业务表 id 兜底
+        Student s = studentMapper.selectById(id);
+        if (s != null) {
+            fillStudentDetail(d, id);
+            return d;
+        }
+        return d;
+    }
+
+    // ==================== 全景填充 ====================
+
+    private void fillStudentDetail(MonitorVO.AccountDetail d, Long studentId) {
+        d.setRole("STUDENT");
+        MonitorVO.StudentPanorama p = student(studentId);
+        d.setStudent(p);
+        if (d.getName() == null) {
+            d.setName(p.getStudentName());
+            d.setNo(p.getStudentNo());
+        }
+        d.setExtra(p.getClazzName() + (p.getGrade() == null ? "" : (" · " + p.getGrade()))
+                + (p.getCollegeName() == null ? "" : (" · " + p.getCollegeName())));
+    }
+
+    private void fillTeacherDetail(MonitorVO.AccountDetail d, Long teacherId) {
+        Teacher t = teacherMapper.selectById(teacherId);
+        if (t != null) {
+            if (d.getName() == null) {
+                d.setName(t.getName());
+                d.setNo(t.getTeacherNo());
+            }
+            d.setExtra("教师");
+        }
+        // 名下开课班级 → 名下学生
+        List<CourseOffering> offerings = courseOfferingMapper.selectList(
+                new LambdaQueryWrapper<CourseOffering>().eq(CourseOffering::getTeacherId, teacherId));
+        Set<Long> clazzIds = offerings.stream().map(CourseOffering::getClazzId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        List<Student> students = clazzIds.isEmpty() ? List.of()
+                : studentMapper.selectList(new LambdaQueryWrapper<Student>().in(Student::getClazzId, clazzIds));
+        d.setTeacherStudents(students.stream().map(s -> {
+            MonitorVO.Item item = new MonitorVO.Item();
+            item.setSubject(s.getStudentNo() + " " + s.getName());
+            item.setContent("预警 "
+                    + warningRecordMapper.selectCount(new LambdaQueryWrapper<WarningRecord>()
+                    .eq(WarningRecord::getStudentId, s.getId()).eq(WarningRecord::getStatus, "ACTIVE")) + " 条");
+            return item;
+        }).collect(Collectors.toList()));
+
+        MonitorVO.AccountStat st = new MonitorVO.AccountStat();
+        Set<Long> studentIds = students.stream().map(Student::getId).collect(Collectors.toSet());
+        st.setActiveWarning(studentIds.isEmpty() ? 0L
+                : warningRecordMapper.selectCount(new LambdaQueryWrapper<WarningRecord>()
+                .in(WarningRecord::getStudentId, studentIds).eq(WarningRecord::getStatus, "ACTIVE")));
+        st.setTicketCount(studentIds.isEmpty() ? 0L
+                : interventionTicketMapper.selectCount(new LambdaQueryWrapper<InterventionTicket>()
+                .in(InterventionTicket::getStudentId, studentIds)));
+        d.setStat(st);
+    }
+
+    private void fillParentDetail(MonitorVO.AccountDetail d, Long parentUserId) {
+        d.setRole("PARENT");
+        List<StudentParent> binds = studentParentMapper.selectList(
+                new LambdaQueryWrapper<StudentParent>().eq(StudentParent::getParentUserId, parentUserId));
+        long childWarnings = 0L;
+        List<MonitorVO.Item> children = new ArrayList<>();
+        for (StudentParent b : binds) {
+            Student s = studentMapper.selectById(b.getStudentId());
+            if (s == null) {
+                continue;
+            }
+            long act = warningRecordMapper.selectCount(new LambdaQueryWrapper<WarningRecord>()
+                    .eq(WarningRecord::getStudentId, s.getId()).eq(WarningRecord::getStatus, "ACTIVE"));
+            childWarnings += act;
+            MonitorVO.Item item = new MonitorVO.Item();
+            item.setSubject(s.getStudentNo() + " " + s.getName());
+            item.setContent("待处理预警 " + act + " 条");
+            item.setExtra(b.getRelation() == null ? "" : b.getRelation());
+            children.add(item);
+        }
+        d.setParentChildren(children);
+        if (d.getName() == null) {
+            d.setName(children.isEmpty() ? ("家长#" + parentUserId)
+                    : (binds.get(0).getParentName() == null ? ("家长#" + parentUserId) : binds.get(0).getParentName()));
+        }
+        MonitorVO.AccountStat st = new MonitorVO.AccountStat();
+        st.setActiveWarning(childWarnings);
+        st.setFeedbackCount(parentFeedbackMapper.selectCount(
+                new LambdaQueryWrapper<ParentFeedback>().eq(ParentFeedback::getParentId, parentUserId)));
+        st.setNotifyUnread(notifyMapper.selectCount(
+                new LambdaQueryWrapper<NotifyMessage>().eq(NotifyMessage::getUserId, parentUserId)
+                        .eq(NotifyMessage::getIsRead, 0)));
+        d.setStat(st);
+    }
+
+    // ==================== 工具 ====================
+
+    private <E> PageResult<MonitorVO.RecordRow> pageRows(IPage<E> page, Function<E, MonitorVO.RecordRow> converter) {
+        return PageResult.of(page, converter);
+    }
+
+    private MonitorVO.RecordRow row(Long id, String bizId, String subject, String content, String extra, String time) {
+        MonitorVO.RecordRow r = new MonitorVO.RecordRow();
+        r.setId(id);
+        r.setBizId(bizId);
+        r.setSubject(subject);
+        r.setContent(content);
+        r.setExtra(extra);
+        r.setTime(time);
+        return r;
+    }
+
+    private String courseName(Long courseId) {
+        if (courseId == null) {
+            return "";
+        }
+        Course c = courseMapper.selectById(courseId);
+        return c == null ? ("课程#" + courseId) : c.getCourseName();
+    }
+
+    private Map<Long, String> clazzNameMap() {
+        return clazzMapper.selectList(null).stream()
+                .collect(Collectors.toMap(Clazz::getId, Clazz::getClazzName, (a, b) -> a));
+    }
+
+    private Map<Long, String> studentNameMap() {
+        return studentMapper.selectList(null).stream()
+                .collect(Collectors.toMap(Student::getId, Student::getName, (a, b) -> a));
+    }
 
     private BigDecimal avgScoreOf(Long studentId) {
         List<Score> scores = scoreMapper.selectList(new LambdaQueryWrapper<Score>()

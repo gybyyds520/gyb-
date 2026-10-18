@@ -1,7 +1,10 @@
 <template>
   <div class="monitor">
     <div class="head">
-      <div class="title">管理员监察中心</div>
+      <div class="title">
+        管理员监察中心
+        <span class="badge">至高无上权限 · 可查看所有端全部信息与功能</span>
+      </div>
       <div class="head-right">
         <el-switch v-model="autoRefresh" size="small" active-text="自动刷新" style="margin-right: 8px" />
         <el-button size="small" type="primary" :loading="loading" @click="loadAll">刷新</el-button>
@@ -40,115 +43,206 @@
       </div>
     </div>
 
-    <div class="main-row">
-      <!-- 学生数据全景 -->
-      <div class="panel student-panel">
-        <div class="panel-title">
-          学生数据全景
-          <el-select v-model="selectedStudent" filterable clearable placeholder="搜索并选择学生"
-                     style="width: 220px; margin-left: 12px" @change="onStudentChange">
-            <el-option v-for="s in studentOptions" :key="s.id" :value="s.id"
-                       :label="`${s.studentNo} · ${s.name}`" />
-          </el-select>
-          <el-input v-model="studentKeyword" placeholder="按学号/姓名搜索" size="small" clearable
-                    style="width: 150px; margin-left: 8px" @keyup.enter="searchStudents" @clear="searchStudents" />
-          <el-button size="small" @click="searchStudents">查</el-button>
+    <el-tabs v-model="activeTab" class="main-tabs">
+      <!-- Tab 1：最新动态 -->
+      <el-tab-pane label="最新动态" name="latest">
+        <div class="panel">
+          <div class="panel-title">各端最新动态</div>
+          <el-tabs v-model="latestTab">
+            <el-tab-pane label="预警" name="warnings">
+              <el-table :data="latest?.warnings || []" size="small" border>
+                <el-table-column prop="time" label="时间" width="110" />
+                <el-table-column prop="subject" label="对象" />
+                <el-table-column prop="content" label="类型/状态" width="150" />
+              </el-table>
+            </el-tab-pane>
+            <el-tab-pane label="帮扶工单" name="tickets">
+              <el-table :data="latest?.tickets || []" size="small" border>
+                <el-table-column prop="time" label="时间" width="110" />
+                <el-table-column prop="subject" label="学生" />
+                <el-table-column prop="content" label="状态" width="120" />
+              </el-table>
+            </el-tab-pane>
+            <el-tab-pane label="家长回执" name="feedbacks">
+              <el-table :data="latest?.feedbacks || []" size="small" border>
+                <el-table-column prop="time" label="时间" width="110" />
+                <el-table-column prop="subject" label="回执对象" />
+                <el-table-column prop="content" label="内容" />
+              </el-table>
+            </el-tab-pane>
+            <el-tab-pane label="站内消息" name="messages">
+              <el-table :data="latest?.messages || []" size="small" border>
+                <el-table-column prop="time" label="时间" width="110" />
+                <el-table-column prop="subject" label="会话" />
+                <el-table-column prop="content" label="内容" />
+              </el-table>
+            </el-tab-pane>
+            <el-tab-pane label="AI 调用" name="aiCalls">
+              <el-table :data="latest?.aiCalls || []" size="small" border>
+                <el-table-column prop="time" label="时间" width="110" />
+                <el-table-column prop="subject" label="场景/模型" />
+                <el-table-column prop="content" label="状态" width="140" />
+              </el-table>
+            </el-tab-pane>
+            <el-tab-pane label="审计日志" name="audits">
+              <el-table :data="latest?.audits || []" size="small" border>
+                <el-table-column prop="time" label="时间" width="110" />
+                <el-table-column prop="subject" label="操作者·模块" />
+                <el-table-column prop="content" label="参数" />
+              </el-table>
+            </el-tab-pane>
+          </el-tabs>
         </div>
+      </el-tab-pane>
 
-        <div v-if="panorama?.studentName" class="panorama">
-          <div class="p-head">
-            {{ panorama.studentName }}
-            <span class="p-sub">{{ panorama.studentNo }} · {{ panorama.clazzName || '-' }} · {{ panorama.grade || '-' }} · {{ panorama.collegeName || '-' }}</span>
+      <!-- Tab 2：全量记录 -->
+      <el-tab-pane label="全量记录" name="records">
+        <div class="panel">
+          <div class="panel-title">
+            全量记录（12 个维度 · 全部数据）
+            <el-select v-model="recordDimension" style="width: 170px; margin-left: 12px" @change="loadRecords(1)">
+              <el-option v-for="d in recordDims" :key="d.value" :value="d.value" :label="d.label" />
+            </el-select>
           </div>
-          <div class="p-grid">
-            <div class="p-cell"><div>成绩记录</div><b>{{ panorama.scoreCount ?? '-' }}</b></div>
-            <div class="p-cell"><div>平均分</div><b>{{ panorama.avgScore ?? '-' }}</b></div>
-            <div class="p-cell"><div>画像快照</div><b>{{ panorama.snapshotCount ?? '-' }}</b></div>
-            <div class="p-cell"><div>待处理预警</div><b class="warn">{{ panorama.activeWarning ?? '-' }}</b></div>
-            <div class="p-cell"><div>学习目标</div><b>{{ panorama.goalCount ?? '-' }}</b></div>
-            <div class="p-cell"><div>未读通知</div><b>{{ panorama.notifyUnread ?? '-' }}</b></div>
-            <div class="p-cell"><div>帮扶工单</div><b>{{ panorama.ticketCount ?? '-' }}</b></div>
-            <div class="p-cell"><div>消息</div><b>{{ panorama.messageCount ?? '-' }}</b></div>
+          <el-table :data="records?.records || []" size="small" border>
+            <el-table-column prop="time" label="时间" width="120" />
+            <el-table-column prop="subject" label="主体" min-width="180" />
+            <el-table-column prop="content" label="维度/状态" width="160" />
+            <el-table-column prop="extra" label="说明" min-width="140" />
+          </el-table>
+          <el-pagination class="pager" small background layout="total, prev, pager, next"
+                         :total="records?.total || 0" :page-size="10"
+                         :current-page="recordPage" @current-change="loadRecords" />
+        </div>
+      </el-tab-pane>
+
+      <!-- Tab 3：账号全景 -->
+      <el-tab-pane label="账号全景" name="accounts">
+        <div class="account-row">
+          <div class="panel account-list">
+            <div class="panel-title">
+              三端账号
+              <el-radio-group v-model="accountRole" size="small" style="margin-left: 12px" @change="loadAccounts">
+                <el-radio-button value="STUDENT">学生端</el-radio-button>
+                <el-radio-button value="TEACHER">教师端</el-radio-button>
+                <el-radio-button value="PARENT">家长端</el-radio-button>
+              </el-radio-group>
+            </div>
+            <div class="account-items">
+              <div v-for="a in accountList" :key="a.id" class="account-item"
+                   :class="{ active: a.id === accountDetail?.id }" @click="loadAccount(a.id)">
+                <div class="a-name">{{ a.name }}</div>
+                <div class="a-sub">{{ a.no }} · {{ a.extra }}</div>
+              </div>
+              <el-empty v-if="!accountList.length" description="暂无账号" :image-size="50" />
+            </div>
           </div>
-          <div v-if="panorama.latestPredictions?.length" class="p-predict">
-            <div class="p-predict-title">最新风险预测</div>
-            <el-table :data="panorama.latestPredictions" size="small" border>
-              <el-table-column prop="subject" label="预测结果" />
-              <el-table-column prop="content" label="学期" width="140" />
-              <el-table-column prop="time" label="时间" width="130" />
-            </el-table>
+
+          <div class="panel account-detail">
+            <template v-if="accountDetail?.id">
+              <div class="detail-head">
+                {{ accountDetail.name }}
+                <span class="detail-tag" :class="accountDetail.role">{{ roleText(accountDetail.role) }}</span>
+                <span class="detail-sub">{{ accountDetail.no }} · {{ accountDetail.extra }}</span>
+              </div>
+
+              <!-- 学生全景 -->
+              <template v-if="accountDetail.student?.studentName">
+                <div class="p-grid">
+                  <div class="p-cell"><div>成绩记录</div><b>{{ accountDetail.student.scoreCount ?? '-' }}</b></div>
+                  <div class="p-cell"><div>平均分</div><b>{{ accountDetail.student.avgScore ?? '-' }}</b></div>
+                  <div class="p-cell"><div>画像快照</div><b>{{ accountDetail.student.snapshotCount ?? '-' }}</b></div>
+                  <div class="p-cell"><div>待处理预警</div><b class="warn">{{ accountDetail.student.activeWarning ?? '-' }}</b></div>
+                  <div class="p-cell"><div>学习目标</div><b>{{ accountDetail.student.goalCount ?? '-' }}</b></div>
+                  <div class="p-cell"><div>未读通知</div><b>{{ accountDetail.student.notifyUnread ?? '-' }}</b></div>
+                  <div class="p-cell"><div>考勤记录</div><b>{{ accountDetail.student.attendanceCount ?? '-' }}</b></div>
+                  <div class="p-cell"><div>行为记录</div><b>{{ accountDetail.student.behaviorCount ?? '-' }}</b></div>
+                </div>
+                <div v-if="accountDetail.student.latestPredictions?.length" class="d-block">
+                  <div class="d-block-title">最新风险预测</div>
+                  <el-table :data="accountDetail.student.latestPredictions" size="small" border>
+                    <el-table-column prop="subject" label="预测结果" />
+                    <el-table-column prop="content" label="学期" width="140" />
+                    <el-table-column prop="time" label="时间" width="130" />
+                  </el-table>
+                </div>
+              </template>
+
+              <!-- 教师全景 -->
+              <template v-else-if="accountDetail.role === 'TEACHER'">
+                <div class="d-block">
+                  <div class="d-block-title">
+                    名下学生（{{ accountDetail.teacherStudents?.length || 0 }}） · 待处理预警
+                    {{ accountDetail.stat?.activeWarning ?? 0 }} · 工单 {{ accountDetail.stat?.ticketCount ?? 0 }}
+                  </div>
+                  <el-table :data="accountDetail.teacherStudents || []" size="small" border max-height="420">
+                    <el-table-column prop="subject" label="学生" min-width="160" />
+                    <el-table-column prop="content" label="待处理预警" width="140" />
+                    <el-table-column prop="extra" label="" />
+                  </el-table>
+                </div>
+              </template>
+
+              <!-- 家长全景 -->
+              <template v-else-if="accountDetail.role === 'PARENT'">
+                <div class="d-block">
+                  <div class="d-block-title">
+                    绑定子女（{{ accountDetail.parentChildren?.length || 0 }}） · 子女待处理预警合计
+                    {{ accountDetail.stat?.activeWarning ?? 0 }} · 本人回执 {{ accountDetail.stat?.feedbackCount ?? 0 }}
+                    · 未读通知 {{ accountDetail.stat?.notifyUnread ?? 0 }}
+                  </div>
+                  <el-table :data="accountDetail.parentChildren || []" size="small" border max-height="420">
+                    <el-table-column prop="subject" label="子女" min-width="160" />
+                    <el-table-column prop="content" label="预警情况" />
+                    <el-table-column prop="extra" label="关系" width="100" />
+                  </el-table>
+                </div>
+              </template>
+
+              <el-empty v-else description="该账号无额外业务数据（管理岗）" :image-size="50" />
+            </template>
+            <el-empty v-else description="选择左侧任意账号，查看其全部信息与功能" :image-size="60" />
           </div>
         </div>
-        <el-empty v-else description="选择学生查看三端数据全景" :image-size="60" />
-      </div>
-
-      <!-- 各端最新动态 -->
-      <div class="panel feed-panel">
-        <div class="panel-title">各端最新动态</div>
-        <el-tabs v-model="activeTab">
-          <el-tab-pane label="预警" name="warnings">
-            <el-table :data="latest?.warnings || []" size="small" border>
-              <el-table-column prop="time" label="时间" width="110" />
-              <el-table-column prop="subject" label="对象" />
-              <el-table-column prop="content" label="类型/状态" width="150" />
-            </el-table>
-          </el-tab-pane>
-          <el-tab-pane label="帮扶工单" name="tickets">
-            <el-table :data="latest?.tickets || []" size="small" border>
-              <el-table-column prop="time" label="时间" width="110" />
-              <el-table-column prop="subject" label="学生" />
-              <el-table-column prop="content" label="状态" width="120" />
-            </el-table>
-          </el-tab-pane>
-          <el-tab-pane label="家长回执" name="feedbacks">
-            <el-table :data="latest?.feedbacks || []" size="small" border>
-              <el-table-column prop="time" label="时间" width="110" />
-              <el-table-column prop="subject" label="回执对象" />
-              <el-table-column prop="content" label="内容" />
-            </el-table>
-          </el-tab-pane>
-          <el-tab-pane label="站内消息" name="messages">
-            <el-table :data="latest?.messages || []" size="small" border>
-              <el-table-column prop="time" label="时间" width="110" />
-              <el-table-column prop="subject" label="会话" />
-              <el-table-column prop="content" label="内容" />
-            </el-table>
-          </el-tab-pane>
-          <el-tab-pane label="AI 调用" name="aiCalls">
-            <el-table :data="latest?.aiCalls || []" size="small" border>
-              <el-table-column prop="time" label="时间" width="110" />
-              <el-table-column prop="subject" label="场景/模型" />
-              <el-table-column prop="content" label="状态" width="140" />
-            </el-table>
-          </el-tab-pane>
-          <el-tab-pane label="审计日志" name="audits">
-            <el-table :data="latest?.audits || []" size="small" border>
-              <el-table-column prop="time" label="时间" width="110" />
-              <el-table-column prop="subject" label="操作者·模块" />
-              <el-table-column prop="content" label="参数" />
-            </el-table>
-          </el-tab-pane>
-        </el-tabs>
-      </div>
-    </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { monitorOverview, monitorLatest, monitorStudent } from '@/api/monitor'
-import { pageStudents } from '@/api/student'
+import { monitorOverview, monitorLatest, monitorRecords, monitorAccounts, monitorAccount } from '@/api/monitor'
 
 const overview = ref(null)
 const latest = ref(null)
-const panorama = ref(null)
 const loading = ref(false)
 const autoRefresh = ref(true)
-const activeTab = ref('warnings')
+const activeTab = ref('latest')
+const latestTab = ref('warnings')
 
-const studentKeyword = ref('')
-const studentOptions = ref([])
-const selectedStudent = ref(null)
+// 全量记录
+const recordDims = [
+  { value: 'warning', label: '预警' },
+  { value: 'ticket', label: '帮扶工单' },
+  { value: 'feedback', label: '家长回执' },
+  { value: 'message', label: '站内消息' },
+  { value: 'notify', label: '通知' },
+  { value: 'ai', label: 'AI 调用' },
+  { value: 'audit', label: '审计日志' },
+  { value: 'goal', label: '学习目标' },
+  { value: 'prediction', label: '风险预测' },
+  { value: 'score', label: '成绩' },
+  { value: 'attendance', label: '考勤' },
+  { value: 'behavior', label: '在线行为' }
+]
+const recordDimension = ref('warning')
+const recordPage = ref(1)
+const records = ref(null)
+
+// 账号全景
+const accountRole = ref('STUDENT')
+const accountList = ref([])
+const accountDetail = ref(null)
 
 let timer = null
 
@@ -167,32 +261,34 @@ async function loadAll() {
   }
 }
 
-async function searchStudents() {
-  const res = await pageStudents({ current: 1, size: 50, keyword: studentKeyword.value || undefined })
-  studentOptions.value = (res?.records || []).map((s) => ({ id: s.id, studentNo: s.studentNo, name: s.name }))
-  if (selectedStudent.value && !studentOptions.value.some((o) => o.id === selectedStudent.value)) {
-    selectedStudent.value = null
-    panorama.value = null
-  }
+async function loadRecords(page) {
+  recordPage.value = page || 1
+  records.value = await monitorRecords({
+    dimension: recordDimension.value,
+    current: recordPage.value,
+    size: 10
+  })
 }
 
-async function onStudentChange(id) {
-  if (!id) {
-    panorama.value = null
-    return
-  }
-  panorama.value = await monitorStudent(id)
+async function loadAccounts() {
+  accountList.value = await monitorAccounts(accountRole.value)
+  accountDetail.value = null
 }
+
+async function loadAccount(id) {
+  accountDetail.value = await monitorAccount(id)
+}
+
+const roleText = (r) => ({ STUDENT: '学生', TEACHER: '教师', PARENT: '家长', ADMIN: '管理员' })[r] || r
 
 onMounted(async () => {
   await loadAll()
-  await searchStudents()
-  timer = setInterval(() => {
-    if (autoRefresh.value) loadAll()
-  }, 10000)
+  await loadAccounts()
 })
 
-onUnmounted(() => clearInterval(timer))
+onUnmounted(() => {
+  clearInterval(timer)
+})
 </script>
 
 <style scoped>
@@ -205,12 +301,23 @@ onUnmounted(() => clearInterval(timer))
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 
 .title {
   font-size: 18px;
   font-weight: 700;
+}
+
+.badge {
+  font-size: 12px;
+  color: #e64340;
+  background: #fef0ef;
+  border: 1px solid #fbc4c2;
+  border-radius: 12px;
+  padding: 2px 10px;
+  margin-left: 10px;
+  font-weight: 500;
 }
 
 .head-right {
@@ -221,7 +328,7 @@ onUnmounted(() => clearInterval(timer))
 .kpi-row {
   display: flex;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 4px;
 }
 
 .kpi {
@@ -255,27 +362,12 @@ onUnmounted(() => clearInterval(timer))
   color: #e64340;
 }
 
-.main-row {
-  display: flex;
-  gap: 12px;
-}
-
 .panel {
   background: #fff;
   border: 1px solid #e6e8eb;
   border-radius: 10px;
   padding: 12px 16px;
   box-sizing: border-box;
-}
-
-.student-panel {
-  width: 46%;
-  min-width: 460px;
-}
-
-.feed-panel {
-  flex: 1;
-  min-width: 0;
 }
 
 .panel-title {
@@ -287,13 +379,97 @@ onUnmounted(() => clearInterval(timer))
   align-items: center;
 }
 
-.p-head {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 10px;
+.pager {
+  margin-top: 10px;
+  justify-content: flex-end;
 }
 
-.p-sub {
+.account-row {
+  display: flex;
+  gap: 12px;
+}
+
+.account-list {
+  width: 300px;
+  min-width: 300px;
+  max-height: 560px;
+}
+
+.account-items {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.account-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  margin-bottom: 6px;
+  transition: all .15s;
+}
+
+.account-item:hover {
+  background: #f5f7fa;
+}
+
+.account-item.active {
+  background: #eef4ff;
+  border-color: #3370ff;
+}
+
+.a-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.a-sub {
+  font-size: 12px;
+  color: #646a73;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-detail {
+  flex: 1;
+  min-width: 0;
+  min-height: 560px;
+}
+
+.detail-head {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.detail-tag {
+  font-size: 12px;
+  border-radius: 4px;
+  padding: 1px 8px;
+  margin-left: 8px;
+  color: #fff;
+}
+
+.detail-tag.STUDENT {
+  background: #3370ff;
+}
+
+.detail-tag.TEACHER {
+  background: #e6a23c;
+}
+
+.detail-tag.PARENT {
+  background: #00b42a;
+}
+
+.detail-tag.ADMIN {
+  background: #e64340;
+}
+
+.detail-sub {
   font-size: 12px;
   color: #646a73;
   font-weight: 400;
@@ -328,10 +504,14 @@ onUnmounted(() => clearInterval(timer))
   color: #e64340;
 }
 
-.p-predict-title {
+.d-block {
+  margin-bottom: 12px;
+}
+
+.d-block-title {
   font-size: 13px;
-  color: #1f2329;
   font-weight: 600;
+  color: #1f2329;
   margin-bottom: 6px;
 }
 

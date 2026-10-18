@@ -100,8 +100,62 @@ public class MonitorVO {
         private Long notifyUnread;
         private Long messageCount;
         private Long ticketCount;
+        private Long attendanceCount;
+        private Long behaviorCount;
 
         /** 最新预测 */
         private List<Item> latestPredictions;
+    }
+
+    /** 全量记录通用行 */
+    @Data
+    public static class RecordRow {
+        private Long id;
+        private String bizId;
+        private String time;
+        private String subject;
+        private String content;
+        private String extra;
+    }
+
+    /** 三端账号 */
+    @Data
+    public static class Account {
+        /** 业务主键：学生ID/教师ID/家长账号ID */
+        private Long id;
+        /** sys_user.id（家长为 parentUserId，学生/教师为其 userId） */
+        private Long userId;
+        private String no;
+        private String name;
+        private String extra;
+    }
+
+    /** 任意账号数据全景（管理员至高无上权限） */
+    @Data
+    public static class AccountDetail {
+        private Long id;
+        private String role;
+        private String name;
+        private String no;
+        private String extra;
+        /** 学生端全景（当该账号为 STUDENT 时） */
+        private StudentPanorama student;
+        /** 教师：名下学生 */
+        private List<Item> teacherStudents;
+        /** 家长：绑定子女 */
+        private List<Item> parentChildren;
+        /** 账号相关统计 */
+        private AccountStat stat;
+    }
+
+    @Data
+    public static class AccountStat {
+        private Long activeWarning;
+        private Long ticketCount;
+        private Long feedbackCount;
+        private Long notifyUnread;
+        private Long messageCount;
+        private Long scoreCount;
+        private Long predictionCount;
     }
 }

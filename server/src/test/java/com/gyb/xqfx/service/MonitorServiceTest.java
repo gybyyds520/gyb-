@@ -1,6 +1,8 @@
 package com.gyb.xqfx.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.gyb.xqfx.common.PageResult;
 import com.gyb.xqfx.entity.*;
 import com.gyb.xqfx.mapper.*;
 import com.gyb.xqfx.model.vo.MonitorVO;
@@ -28,9 +30,10 @@ class MonitorServiceTest {
             ImMessageMapper imm, WarningRecordMapper wm, InterventionTicketMapper itm,
             ParentFeedbackMapper pfm, ScoreMapper scm, PredictionResultMapper prm,
             AuditLogMapper alm, AiCallLogMapper aclm, ClazzMapper clm,
-            MajorMapper mam, CollegeMapper com) {
+            MajorMapper mam, CollegeMapper com, CourseMapper corm, CourseOfferingMapper cofm,
+            AttendanceMapper atm, OnlineBehaviorMapper obm) {
         return new MonitorService(sm, tm, spm, sum, gm, psm, nm, imm, wm, itm,
-                pfm, scm, prm, alm, aclm, clm, mam, com);
+                pfm, scm, prm, alm, aclm, clm, mam, com, corm, cofm, atm, obm);
     }
 
     private static <T> T mock(Class<T> clazz) {
@@ -76,7 +79,9 @@ class MonitorServiceTest {
         when(aclm.selectCount(null)).thenReturn(60L);
 
         MonitorService service = newService(sm, tm, spm, sum, gm, psm, nm, imm, wm, itm,
-                pfm, scm, prm, alm, aclm, clm, mam, com);
+                pfm, scm, prm, alm, aclm, clm, mam, com,
+                mock(CourseMapper.class), mock(CourseOfferingMapper.class),
+                mock(AttendanceMapper.class), mock(OnlineBehaviorMapper.class));
         MonitorVO.Overview o = service.overview();
 
         assertEquals(100L, o.getStudent().getStudentCount());
@@ -135,7 +140,8 @@ class MonitorServiceTest {
                 mock(SysUserMapper.class), mock(LearningGoalMapper.class), mock(ProfileSnapshotMapper.class),
                 mock(NotifyMessageMapper.class), imm, wm, itm, pfm, mock(ScoreMapper.class),
                 mock(PredictionResultMapper.class), alm, aclm, mock(ClazzMapper.class),
-                mock(MajorMapper.class), mock(CollegeMapper.class));
+                mock(MajorMapper.class), mock(CollegeMapper.class), mock(CourseMapper.class),
+                mock(CourseOfferingMapper.class), mock(AttendanceMapper.class), mock(OnlineBehaviorMapper.class));
 
         MonitorVO.Latest l = service.latest();
         assertEquals(1, l.getWarnings().size());
@@ -209,7 +215,9 @@ class MonitorServiceTest {
         MonitorService service = newService(sm, mock(TeacherMapper.class), mock(StudentParentMapper.class),
                 mock(SysUserMapper.class), gm, psm, nm, mock(ImMessageMapper.class), wm, itm,
                 mock(ParentFeedbackMapper.class), scm, prm, mock(AuditLogMapper.class),
-                mock(AiCallLogMapper.class), clm, mam, com);
+                mock(AiCallLogMapper.class), clm, mam, com,
+                mock(CourseMapper.class), mock(CourseOfferingMapper.class),
+                mock(AttendanceMapper.class), mock(OnlineBehaviorMapper.class));
 
         MonitorVO.StudentPanorama p = service.student(1L);
 
@@ -222,5 +230,226 @@ class MonitorServiceTest {
         assertEquals(3L, p.getGoalCount());
         assertEquals(1, p.getLatestPredictions().size());
         assertTrue(p.getLatestPredictions().get(0).getSubject().contains("0.85"));
+    }
+
+    @Test
+    @DisplayName("全量记录分页：预警与成绩维度映射正确")
+    void testRecords() {
+        WarningRecordMapper wm = mock(WarningRecordMapper.class);
+        ScoreMapper scm = mock(ScoreMapper.class);
+        CourseMapper corm = mock(CourseMapper.class);
+        StudentMapper sm = mock(StudentMapper.class);
+
+        WarningRecord w = new WarningRecord();
+        w.setId(5L);
+        w.setWarningNo("W2026101800005");
+        w.setStudentId(7L);
+        w.setTitle("考勤异常");
+        w.setWarningLevel(2);
+        w.setWarningType("ATTENDANCE");
+        w.setStatus("ACTIVE");
+        w.setCreateTime(LocalDateTime.now());
+        Page<WarningRecord> wp = new Page<>(1, 10);
+        wp.setTotal(1);
+        wp.setRecords(List.of(w));
+        when(wm.selectPage(any(), any())).thenReturn(wp);
+
+        Student s = new Student();
+        s.setId(7L);
+        s.setName("李四");
+        when(sm.selectById(7L)).thenReturn(s);
+
+        Score sc = new Score();
+        sc.setId(3L);
+        sc.setStudentId(7L);
+        sc.setCourseId(21L);
+        sc.setTotalScore(new BigDecimal("88"));
+        Page<Score> sp = new Page<>(1, 10);
+        sp.setTotal(1);
+        sp.setRecords(List.of(sc));
+        when(scm.selectPage(any(), any())).thenReturn(sp);
+        Course c = new Course();
+        c.setId(21L);
+        c.setCourseName("数据结构");
+        when(corm.selectById(21L)).thenReturn(c);
+
+        MonitorService service = newService(sm, mock(TeacherMapper.class), mock(StudentParentMapper.class),
+                mock(SysUserMapper.class), mock(LearningGoalMapper.class), mock(ProfileSnapshotMapper.class),
+                mock(NotifyMessageMapper.class), mock(ImMessageMapper.class), wm, mock(InterventionTicketMapper.class),
+                mock(ParentFeedbackMapper.class), scm, mock(PredictionResultMapper.class),
+                mock(AuditLogMapper.class), mock(AiCallLogMapper.class), mock(ClazzMapper.class),
+                mock(MajorMapper.class), mock(CollegeMapper.class), corm, mock(CourseOfferingMapper.class),
+                mock(AttendanceMapper.class), mock(OnlineBehaviorMapper.class));
+
+        PageResult<MonitorVO.RecordRow> warnings = service.records("warning", 1, 10);
+        assertEquals(1, warnings.getRecords().size());
+        MonitorVO.RecordRow r = warnings.getRecords().get(0);
+        assertEquals("W2026101800005", r.getBizId());
+        assertTrue(r.getSubject().contains("李四"));
+        assertEquals("黄色 ATTENDANCE", r.getContent());
+
+        PageResult<MonitorVO.RecordRow> scores = service.records("score", 1, 10);
+        assertTrue(scores.getRecords().get(0).getSubject().contains("数据结构"));
+        assertEquals("88", scores.getRecords().get(0).getContent());
+    }
+
+    @Test
+    @DisplayName("三端账号列表含组织信息")
+    void testAccounts() {
+        StudentMapper sm = mock(StudentMapper.class);
+        ClazzMapper clm = mock(ClazzMapper.class);
+        StudentParentMapper spm = mock(StudentParentMapper.class);
+
+        Student s = new Student();
+        s.setId(1L);
+        s.setStudentNo("20230101");
+        s.setName("张三");
+        s.setClazzId(11L);
+        when(sm.selectList(null)).thenReturn(List.of(s));
+        Clazz cz = new Clazz();
+        cz.setClazzName("计科2301");
+        cz.setGrade("2023");
+        when(clm.selectById(11L)).thenReturn(cz);
+
+        StudentParent bind = new StudentParent();
+        bind.setParentUserId(100L);
+        bind.setStudentId(1L);
+        bind.setParentName("张三家长");
+        bind.setRelation("FATHER");
+        when(spm.selectList(any())).thenReturn(List.of(bind));
+
+        MonitorService service = newService(sm, mock(TeacherMapper.class), spm, mock(SysUserMapper.class),
+                mock(LearningGoalMapper.class), mock(ProfileSnapshotMapper.class), mock(NotifyMessageMapper.class),
+                mock(ImMessageMapper.class), mock(WarningRecordMapper.class), mock(InterventionTicketMapper.class),
+                mock(ParentFeedbackMapper.class), mock(ScoreMapper.class), mock(PredictionResultMapper.class),
+                mock(AuditLogMapper.class), mock(AiCallLogMapper.class), clm, mock(MajorMapper.class),
+                mock(CollegeMapper.class), mock(CourseMapper.class), mock(CourseOfferingMapper.class),
+                mock(AttendanceMapper.class), mock(OnlineBehaviorMapper.class));
+
+        List<MonitorVO.Account> students = service.accounts("STUDENT");
+        assertEquals(1, students.size());
+        assertEquals("张三", students.get(0).getName());
+        assertTrue(students.get(0).getExtra().contains("计科2301"));
+
+        List<MonitorVO.Account> parents = service.accounts("PARENT");
+        assertEquals(1, parents.size());
+        assertEquals(100L, parents.get(0).getId());
+        assertTrue(parents.get(0).getExtra().contains("张三"));
+    }
+
+    @Test
+    @DisplayName("任意账号数据全景：学生/教师/家长三端")
+    void testAccountDetail() {
+        SysUserMapper sum = mock(SysUserMapper.class);
+        StudentMapper sm = mock(StudentMapper.class);
+        ClazzMapper clm = mock(ClazzMapper.class);
+        MajorMapper mam = mock(MajorMapper.class);
+        CollegeMapper com = mock(CollegeMapper.class);
+        ScoreMapper scm = mock(ScoreMapper.class);
+        WarningRecordMapper wm = mock(WarningRecordMapper.class);
+        LearningGoalMapper gm = mock(LearningGoalMapper.class);
+        ProfileSnapshotMapper psm = mock(ProfileSnapshotMapper.class);
+        NotifyMessageMapper nm = mock(NotifyMessageMapper.class);
+        InterventionTicketMapper itm = mock(InterventionTicketMapper.class);
+        PredictionResultMapper prm = mock(PredictionResultMapper.class);
+        TeacherMapper tm = mock(TeacherMapper.class);
+        CourseOfferingMapper cofm = mock(CourseOfferingMapper.class);
+        StudentParentMapper spm = mock(StudentParentMapper.class);
+        ParentFeedbackMapper pfm = mock(ParentFeedbackMapper.class);
+        AttendanceMapper atm = mock(AttendanceMapper.class);
+        OnlineBehaviorMapper obm = mock(OnlineBehaviorMapper.class);
+
+        // 学生账号
+        SysUser su = new SysUser();
+        su.setId(100L);
+        su.setUsername("stu001");
+        su.setRealName("张三");
+        su.setUserType("STUDENT");
+        su.setStudentId(1L);
+        when(sum.selectById(100L)).thenReturn(su);
+
+        Student s = new Student();
+        s.setId(1L);
+        s.setStudentNo("20230101");
+        s.setName("张三");
+        s.setClazzId(11L);
+        when(sm.selectById(1L)).thenReturn(s);
+        Clazz cz = new Clazz();
+        cz.setClazzName("计科2301");
+        cz.setGrade("2023");
+        cz.setMajorId(21L);
+        when(clm.selectById(11L)).thenReturn(cz);
+        Major mj = new Major();
+        mj.setId(21L);
+        mj.setCollegeId(31L);
+        when(mam.selectById(21L)).thenReturn(mj);
+        College c = new College();
+        c.setId(31L);
+        c.setCollegeName("计算与信息科学学院");
+        when(com.selectById(31L)).thenReturn(c);
+        when(scm.selectList(any())).thenReturn(List.of());
+        when(scm.selectCount(any())).thenReturn(0L);
+        when(psm.selectCount(any())).thenReturn(0L);
+        when(gm.selectCount(any())).thenReturn(0L);
+        when(nm.selectCount(any())).thenReturn(0L);
+        when(itm.selectCount(any())).thenReturn(0L);
+        when(atm.selectCount(any())).thenReturn(0L);
+        when(obm.selectCount(any())).thenReturn(0L);
+        when(wm.selectCount(any())).thenReturn(0L);
+        when(prm.selectList(any())).thenReturn(List.of());
+
+        MonitorService service = newService(sm, tm, spm, sum, gm, psm, nm,
+                mock(ImMessageMapper.class), wm, itm, pfm, scm, prm, mock(AuditLogMapper.class),
+                mock(AiCallLogMapper.class), clm, mam, com, mock(CourseMapper.class), cofm, atm, obm);
+
+        MonitorVO.AccountDetail stu = service.accountDetail(100L);
+        assertEquals("STUDENT", stu.getRole());
+        assertEquals("张三", stu.getStudent().getStudentName());
+
+        // 教师账号
+        SysUser tu = new SysUser();
+        tu.setId(101L);
+        tu.setUsername("tea001");
+        tu.setRealName("王老师");
+        tu.setUserType("TEACHER");
+        tu.setTeacherId(9L);
+        when(sum.selectById(101L)).thenReturn(tu);
+        Teacher t = new Teacher();
+        t.setId(9L);
+        t.setName("王老师");
+        t.setTeacherNo("T009");
+        when(tm.selectById(9L)).thenReturn(t);
+        CourseOffering off = new CourseOffering();
+        off.setId(1L);
+        off.setTeacherId(9L);
+        off.setClazzId(11L);
+        when(cofm.selectList(any())).thenReturn(List.of(off));
+        when(sm.selectList(any())).thenReturn(List.of(s));
+
+        MonitorVO.AccountDetail tea = service.accountDetail(101L);
+        assertEquals("TEACHER", tea.getRole());
+        assertEquals(1, tea.getTeacherStudents().size());
+        assertTrue(tea.getTeacherStudents().get(0).getSubject().contains("张三"));
+
+        // 家长账号
+        SysUser pu = new SysUser();
+        pu.setId(102L);
+        pu.setUsername("parent001");
+        pu.setRealName("张三家长");
+        pu.setUserType("PARENT");
+        when(sum.selectById(102L)).thenReturn(pu);
+        StudentParent bind = new StudentParent();
+        bind.setParentUserId(102L);
+        bind.setStudentId(1L);
+        bind.setParentName("张三家长");
+        bind.setRelation("FATHER");
+        when(spm.selectList(any())).thenReturn(List.of(bind));
+        when(pfm.selectCount(any())).thenReturn(2L);
+
+        MonitorVO.AccountDetail par = service.accountDetail(102L);
+        assertEquals("PARENT", par.getRole());
+        assertEquals(1, par.getParentChildren().size());
+        assertTrue(par.getParentChildren().get(0).getSubject().contains("张三"));
+        assertEquals(2L, par.getStat().getFeedbackCount());
     }
 }
