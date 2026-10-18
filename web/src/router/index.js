@@ -158,6 +158,12 @@ const routes = [
         meta: { title: '学情智能体', code: 'AGENT' }
       },
       {
+        path: 'bigscreen',
+        name: 'BigScreen',
+        component: () => import('@/views/bigscreen/BigScreenView.vue'),
+        meta: { title: '校级大屏', code: 'BIG_SCREEN' }
+      },
+      {
         path: 'parent',
         name: 'Parent',
         component: () => import('@/views/parent/ParentView.vue'),

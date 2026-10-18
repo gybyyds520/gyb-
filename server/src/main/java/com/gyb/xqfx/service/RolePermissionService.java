@@ -53,6 +53,7 @@ public class RolePermissionService {
     public static final String ACAD = "ACAD";
     public static final String MODEL = "MODEL";
     public static final String AGENT = "AGENT";
+    public static final String BIG_SCREEN = "BIG_SCREEN";
 
     /** 学生端与家长端角色 */
     public static final Set<String> STUDENT_ROLES = Set.of("STUDENT");
@@ -108,6 +109,8 @@ public class RolePermissionService {
         MATRIX.put(MODEL, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"));
         // 学情智能体：教师与学生的个人学情助手
         MATRIX.put(AGENT, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER", "STUDENT"));
+        // 校级大屏：教学管理与校级驾驶舱
+        MATRIX.put(BIG_SCREEN, Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"));
 
         // code -> { 名称, 路由, 图标分组 }
         MENU.put(DASHBOARD, new String[]{"学情总览", "/dashboard", "main"});
@@ -135,6 +138,7 @@ public class RolePermissionService {
         MENU.put(ACAD, new String[]{"教务对接", "/acad", "main"});
         MENU.put(MODEL, new String[]{"模型管理", "/model", "main"});
         MENU.put(AGENT, new String[]{"学情智能体", "/agent", "main"});
+        MENU.put(BIG_SCREEN, new String[]{"校级大屏", "/bigscreen", "main"});
     }
 
     /**
