@@ -66,10 +66,12 @@ xqfx:
   llm:
     provider: auto
     cloud:
-      # 任意 OpenAI 兼容网关（如 DeepSeek/OpenAI/通义等）；api-key 留空则云端通道不启用
-      base-url: https://api.deepseek.com/v1
+      # 免费服务商推荐：智谱开放平台 GLM-4.7-Flash（输入/输出/缓存长期免费，200K 上下文，OpenAI 兼容）
+      # 注册领取 api-key：https://open.bigmodel.cn/ → 控制台创建 API Key；填入后把上方 fallback-to-cloud 改为 true 即启用云端兜底
+      # 备选（按量付费）：DeepSeek https://api.deepseek.com/v1 model=deepseek-chat；通义 https://dashscope.aliyuncs.com/compatible-mode/v1 model=qwen-turbo
+      base-url: https://open.bigmodel.cn/api/paas/v4
       api-key: ""
-      model: deepseek-chat
+      model: glm-4.7-flash
       timeout: 60s
   # Python 预测推理微服务
   ml:
