@@ -42,9 +42,14 @@ public class MlDatasetController {
 
         Set<Long> termIds = new HashSet<>();
         Set<Long> studentIds = new HashSet<>();
+        long externalCount = 0;
         for (MlFeatureRow row : dataset) {
             if (row.getTermId() != null) {
-                termIds.add(row.getTermId());
+                if (row.getTermId() < 0) {
+                    externalCount++;
+                } else {
+                    termIds.add(row.getTermId());
+                }
             }
             if (row.getStudentId() != null) {
                 studentIds.add(row.getStudentId());
@@ -85,6 +90,7 @@ public class MlDatasetController {
         data.put("riskCount", riskCount);
         data.put("safeCount", safeCount);
         data.put("riskRate", total == 0 ? 0.0 : Math.round(riskCount * 1000.0 / total) / 10.0);
+        data.put("externalCount", externalCount);
         data.put("featureCoverage", coverage);
         data.put("status", status);
         data.put("suggestion", suggestion);

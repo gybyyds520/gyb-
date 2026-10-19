@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "source": "student-mat.csv",
+      "rows": 395,
+      "mapping": "UCI: G1/G2/G3(0-20)*5, absences→absent_count, G3<10→label=1; 行为列按别名映射"
+    },
+    {
+      "source": "student-por.csv",
+      "rows": 649,
+      "mapping": "UCI: G1/G2/G3(0-20)*5, absences→absent_count, G3<10→label=1; 行为列按别名映射"
+    }
+  ]
+}

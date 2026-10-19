@@ -68,6 +68,7 @@ public class PredictionService {
     private final MlServiceClient mlServiceClient;
     private final WarningService warningService;
     private final ObjectMapper objectMapper;
+    private final ExternalDatasetLoader externalDatasetLoader;
 
     // ==================== 特征工程 ====================
 
@@ -231,6 +232,14 @@ public class PredictionService {
             for (MlFeatureRow row : features) {
                 row.setLabel(failCountNextTerm.getOrDefault(row.getStudentId(), 0) > 0 ? 1 : 0);
                 dataset.add(row);
+            }
+        }
+        // 并入外部开源样本（天池/UCI/xAPI，import_external.py 生成；term_id<0 标识，来源留痕）
+        if (externalDatasetLoader != null && externalDatasetLoader.exists()) {
+            List<MlFeatureRow> external = externalDatasetLoader.load();
+            if (!external.isEmpty()) {
+                dataset.addAll(external);
+                log.info("已并入外部开源训练样本 {} 条（source=EXTERNAL）", external.size());
             }
         }
         return dataset;

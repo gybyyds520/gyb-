@@ -76,6 +76,8 @@ xqfx:
   # Python 预测推理微服务
   ml:
     base-url: http://127.0.0.1:8000
+    # 外部开源训练样本（天池/UCI/xAPI，由 ml/data/import_external.py 生成）；文件不存在时自动忽略
+    external-dataset: ../ml/data/external/external_features.csv
   # 教务系统对接适配器（mock=内置演示数据源；接入真实教务系统时切换为对应实现）
   acad:
     provider: mock
