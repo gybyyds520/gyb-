@@ -101,6 +101,21 @@ npm run pack         # 打包 NSIS 安装包 + 绿色版（release/ 目录）
 
 后端通过 `xqfx.ollama.*` 配置接入；服务不可用时自动降级为规则化文本，功能不中断。
 
+### 7. 大模型双轨策略（本地优先 · 云端可选降级）
+
+系统采用「本地 Ollama 优先、外部 AI 云端兜底」双轨路由，回应当前高校对大模型数据安全与可用性的要求：
+
+- **路由模式** `xqfx.llm.provider=auto`：本地优先 → 本地不可用时若开启 `xqfx.ollama.fallback-to-cloud` 则转云端 → 均不可用时规则化降级（功能不中断）。
+- **云端通道** `xqfx.llm.cloud.*`（OpenAI 兼容网关，如 DeepSeek/OpenAI/通义）：`base-url` / `api-key` / `model` / `timeout`。**api-key 留空则云端通道自动关闭，行为与升级前完全一致（零风险升级）**。
+- **出校脱敏** `xqfx.privacy.mask-llm-prompt=true`：发送云端前对手机号、身份证自动打码；调用日志 `ai_call_log` 记录实际 provider 来源（本地/云端/规则），可审计。
+- **健康检查** `GET /ai/health` 返回 Provider 状态：`localAvailable` / `cloudConfigured` / `activeProvider`（LOCAL / CLOUD / RULE_FALLBACK）/ `providerMode`。
+
+### 8. 预测模型训练数据源诊断
+
+- **训练数据**：`PredictionService.buildTrainingDataset()` 用历史学期特征 + 下学期是否挂科做标签（有监督时间序列切分），LR/RF/XGB 训练与评估，冷启动由 `ConstantPredictor` 兜底。
+- **诊断接口** `GET /ml/dataset-summary`：返回可训练样本数、学生数、学期跨度、风险/正常类别分布、特征覆盖率与数据状态（READY / COLD_START / IMBALANCED），用于答辩与生产环境数据健康度检查。
+- 演示环境数据由 bootstrap（200 名学生）与 realtime 模拟流提供；生产环境切换 `xqfx.acad.provider` 接入真实教务数据。
+
 ## 五、当前进度
 
 - [x] Phase 0：工程骨架 + 数据库全量设计

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.gyb.xqfx.annotation.RequireRole;
 import com.gyb.xqfx.client.OllamaClient;
+import com.gyb.xqfx.client.RemoteLlmClient;
 import com.gyb.xqfx.common.BusinessException;
 import com.gyb.xqfx.common.ErrorCode;
 import com.gyb.xqfx.common.Result;
@@ -50,6 +51,7 @@ public class AiController {
     private final KnowledgeService knowledgeService;
     private final DataScopeService dataScopeService;
     private final OllamaClient ollamaClient;
+    private final RemoteLlmClient remoteLlmClient;
     private final AiPromptTemplateMapper templateMapper;
     private final AiCallLogMapper callLogMapper;
     private final NotifyMessageMapper notifyMessageMapper;
@@ -57,12 +59,24 @@ public class AiController {
     private final WarningRecordMapper warningRecordMapper;
     private final ObjectMapper objectMapper;
 
-    @Operation(summary = "大模型服务健康检查")
+    @org.springframework.beans.factory.annotation.Value("${xqfx.llm.provider:auto}")
+    private String llmProvider;
+
+    @Operation(summary = "大模型服务健康检查（含 Provider 状态）")
     @GetMapping("/health")
-    public Result<Boolean> health() {
-        boolean ok = ollamaClient.isAvailable();
-        return Result.success(ok ? Boolean.TRUE : Boolean.FALSE,
-                ok ? "Ollama 服务可用" : "Ollama 服务不可用，将使用规则化降级");
+    public Result<Map<String, Object>> health() {
+        boolean localAvailable = ollamaClient.isAvailable();
+        boolean cloudConfigured = remoteLlmClient.isConfigured();
+        String activeProvider = localAvailable ? "LOCAL" : (cloudConfigured ? "CLOUD" : "RULE_FALLBACK");
+        Map<String, Object> data = new HashMap<>();
+        data.put("localModel", llmProvider == null || !"cloud".equals(llmProvider) ? "llama3.2:3b" : "cloud-only");
+        data.put("localAvailable", localAvailable);
+        data.put("cloudConfigured", cloudConfigured);
+        data.put("cloudAvailable", cloudConfigured);
+        data.put("activeProvider", activeProvider);
+        data.put("providerMode", llmProvider);
+        return Result.success(data,
+                localAvailable ? "本地 Ollama 服务可用" : (cloudConfigured ? "本地不可用，已配置云端通道" : "本地不可用，将使用规则化降级"));
     }
 
     @Operation(summary = "本机已安装模型列表")

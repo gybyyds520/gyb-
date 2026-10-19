@@ -1,6 +1,7 @@
 package com.gyb.xqfx.service;
 
 import com.gyb.xqfx.client.OllamaClient;
+import com.gyb.xqfx.client.RemoteLlmClient;
 import com.gyb.xqfx.mapper.AiCallLogMapper;
 import com.gyb.xqfx.mapper.AiPromptTemplateMapper;
 import com.gyb.xqfx.mapper.AttendanceMapper;
@@ -51,6 +52,7 @@ class TemplateRenderDataDrivenTest {
                 Mockito.mock(AiCallLogMapper.class),
                 Mockito.mock(ReportRecordMapper.class),
                 Mockito.mock(OllamaClient.class),
+                Mockito.mock(RemoteLlmClient.class),
                 Mockito.mock(KnowledgeService.class),
                 Mockito.mock(BigScreenService.class));
         ReflectionTestUtils.setField(service, "llmEnabled", false);

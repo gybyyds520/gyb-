@@ -60,7 +60,17 @@ xqfx:
     enabled: true
     # 模型不可用时自动降级为规则化文本，保证功能可用
     fallback-to-rule: true
+    # 本地不可用时允许转云端（双轨：本地优先、云端兜底）；未配置 api-key 时云端通道自动关闭
     fallback-to-cloud: false
+  # 大模型路由：auto=本地优先云端兜底 | local=仅本地 | cloud=仅云端
+  llm:
+    provider: auto
+    cloud:
+      # 任意 OpenAI 兼容网关（如 DeepSeek/OpenAI/通义等）；api-key 留空则云端通道不启用
+      base-url: https://api.deepseek.com/v1
+      api-key: ""
+      model: deepseek-chat
+      timeout: 60s
   # Python 预测推理微服务
   ml:
     base-url: http://127.0.0.1:8000
@@ -81,6 +91,8 @@ xqfx:
   privacy:
     mask-phone: true
     mask-id-card: true
+    # 出校提示词脱敏（发送到云端前对手机号/身份证打码）
+    mask-llm-prompt: true
   # 文件上传
   file:
     upload-path: ./upload/

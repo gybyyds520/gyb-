@@ -1,6 +1,7 @@
 package com.gyb.xqfx.service;
 
 import com.gyb.xqfx.client.OllamaClient;
+import com.gyb.xqfx.client.RemoteLlmClient;
 import com.gyb.xqfx.entity.Student;
 import com.gyb.xqfx.entity.WarningRecord;
 import com.gyb.xqfx.mapper.AiCallLogMapper;
@@ -50,6 +51,8 @@ class AiAnalysisServiceTest {
     private PredictionResultMapper predictionResultMapper;
     private WarningRecordMapper warningRecordMapper;
     private TermMapper termMapper;
+    private OllamaClient ollamaClient;
+    private RemoteLlmClient remoteLlmClient;
 
     @BeforeEach
     void setUp() {
@@ -61,6 +64,8 @@ class AiAnalysisServiceTest {
         predictionResultMapper = Mockito.mock(PredictionResultMapper.class);
         warningRecordMapper = Mockito.mock(WarningRecordMapper.class);
         termMapper = Mockito.mock(TermMapper.class);
+        ollamaClient = Mockito.mock(OllamaClient.class);
+        remoteLlmClient = Mockito.mock(RemoteLlmClient.class);
         service = new AiAnalysisService(
                 studentMapper,
                 scoreMapper,
@@ -73,11 +78,14 @@ class AiAnalysisServiceTest {
                 Mockito.mock(AiPromptTemplateMapper.class),
                 Mockito.mock(AiCallLogMapper.class),
                 Mockito.mock(ReportRecordMapper.class),
-                Mockito.mock(OllamaClient.class),
+                ollamaClient,
+                remoteLlmClient,
                 Mockito.mock(KnowledgeService.class),
                 bigScreenService);
         ReflectionTestUtils.setField(service, "llmEnabled", false);
         ReflectionTestUtils.setField(service, "fallbackToRule", true);
+        ReflectionTestUtils.setField(service, "fallbackToCloud", true);
+        ReflectionTestUtils.setField(service, "llmProvider", "auto");
     }
 
     // ==================== 模板渲染 ====================
@@ -356,5 +364,44 @@ class AiAnalysisServiceTest {
         assertEquals("FALLBACK", res.getStatus());
         assertTrue(res.getContent().contains("尊敬的家长"));
         assertTrue(res.getContent().contains("张三"));
+    }
+
+    @Test
+    @DisplayName("⑥ 云端降级：本地不可用时自动转外部 AI")
+    void testCloudFallback() {
+        when(warningRecordMapper.selectById(10L)).thenReturn(stubWarning());
+        when(studentMapper.selectById(1L)).thenReturn(stubStudent());
+        stubEmptyLearningData();
+
+        OllamaClient.ChatResult cloud = new OllamaClient.ChatResult();
+        cloud.model = "cloud:deepseek-chat";
+        cloud.content = "云端生成的干预方案";
+        cloud.promptTokens = 100;
+        cloud.completionTokens = 50;
+        when(ollamaClient.chat(any(), any())).thenReturn(null);
+        when(remoteLlmClient.chat(any(), any())).thenReturn(cloud);
+        ReflectionTestUtils.setField(service, "llmEnabled", true);
+
+        AiAnalysisService.AiResult res = service.generateInterventionPlan(10L, 1L);
+        assertEquals("SUCCESS", res.getStatus());
+        assertTrue(res.getModel().startsWith("cloud:"));
+        assertEquals("云端生成的干预方案", res.getContent());
+    }
+
+    @Test
+    @DisplayName("⑦ 云端未配置时保持规则化降级（向后兼容）")
+    void testCloudDisabledStillFallsBackToRule() {
+        when(warningRecordMapper.selectById(10L)).thenReturn(stubWarning());
+        when(studentMapper.selectById(1L)).thenReturn(stubStudent());
+        stubEmptyLearningData();
+
+        when(ollamaClient.chat(any(), any())).thenReturn(null);
+        when(remoteLlmClient.chat(any(), any())).thenReturn(null);
+        ReflectionTestUtils.setField(service, "llmEnabled", true);
+        ReflectionTestUtils.setField(service, "fallbackToCloud", true);
+
+        AiAnalysisService.AiResult res = service.generateInterventionPlan(10L, 1L);
+        assertEquals("FALLBACK", res.getStatus());
+        assertTrue(res.getContent().contains("干预目标"));
     }
 }

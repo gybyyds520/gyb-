@@ -2,6 +2,7 @@ package com.gyb.xqfx.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.gyb.xqfx.client.OllamaClient;
+import com.gyb.xqfx.client.RemoteLlmClient;
 import com.gyb.xqfx.entity.AiCallLog;
 import com.gyb.xqfx.entity.AiPromptTemplate;
 import com.gyb.xqfx.entity.Attendance;
@@ -111,6 +112,7 @@ public class AiAnalysisService {
     private final AiCallLogMapper callLogMapper;
     private final ReportRecordMapper reportRecordMapper;
     private final OllamaClient ollamaClient;
+    private final RemoteLlmClient remoteLlmClient;
     private final KnowledgeService knowledgeService;
     private final BigScreenService bigScreenService;
 
@@ -119,6 +121,54 @@ public class AiAnalysisService {
 
     @Value("${xqfx.ollama.fallback-to-rule:true}")
     private boolean fallbackToRule;
+
+    @Value("${xqfx.ollama.fallback-to-cloud:false}")
+    private boolean fallbackToCloud;
+
+    /** auto=本地优先云端兜底 | local=仅本地 | cloud=仅云端 */
+    @Value("${xqfx.llm.provider:auto}")
+    private String llmProvider;
+
+    /**
+     * 大模型对话路由：本地优先 →（可选）云端兜底。
+     *
+     * <p>provider=cloud 时直接走云端；provider=local/auto 时先本地 Ollama，
+     * 本地不可用且开启 fallback-to-cloud 时转云端；云端也未配置/失败时返回 null，
+     * 由上层继续走规则化降级。</p>
+     *
+     * @return 任一大模型通道的成功结果；全部不可用时返回 null
+     */
+    private OllamaClient.ChatResult chatWithFallback(String system, String prompt) {
+        if ("cloud".equals(llmProvider)) {
+            return remoteLlmClient.chat(system, prompt);
+        }
+        OllamaClient.ChatResult local = ollamaClient.chat(system, prompt);
+        if (local != null) {
+            return local;
+        }
+        if (fallbackToCloud) {
+            return remoteLlmClient.chat(system, prompt);
+        }
+        return null;
+    }
+
+    /**
+     * 流式对话路由：本地优先 →（可选）云端兜底。
+     *
+     * @return 是否成功启用任一大模型流式回复
+     */
+    private boolean streamChatWithFallback(String system, String prompt, Consumer<String> onChunk) {
+        if ("cloud".equals(llmProvider)) {
+            return remoteLlmClient.chatStream(system, prompt, onChunk);
+        }
+        if (ollamaClient.chatStream(system, prompt, onChunk)) {
+            return true;
+        }
+        if (fallbackToCloud) {
+            return remoteLlmClient.chatStream(system, prompt, onChunk);
+        }
+        return false;
+    }
 
     /**
      * 生成学生学情分析报告
@@ -135,7 +185,7 @@ public class AiAnalysisService {
         result.studentName = ctx.studentName;
 
         if (llmEnabled) {
-            OllamaClient.ChatResult chat = ollamaClient.chat(system, prompt);
+            OllamaClient.ChatResult chat = chatWithFallback(system, prompt);
             if (chat != null) {
                 result.content = chat.content;
                 result.model = chat.model;
@@ -180,7 +230,7 @@ public class AiAnalysisService {
         result.studentName = ctx.studentName;
 
         if (llmEnabled) {
-            OllamaClient.ChatResult chat = ollamaClient.chat(system, prompt);
+            OllamaClient.ChatResult chat = chatWithFallback(system, prompt);
             if (chat != null) {
                 result.content = chat.content;
                 result.model = chat.model;
@@ -217,7 +267,7 @@ public class AiAnalysisService {
         String system = "你是严谨的高校学情助手，回答简洁、基于事实，不做主观臆断。";
 
         long start = System.currentTimeMillis();
-        if (llmEnabled && ollamaClient.chatStream(system, prompt, onChunk)) {
+        if (llmEnabled && streamChatWithFallback(system, prompt, onChunk)) {
             logCall("CHAT", studentId, null, null, 0, 0,
                     (int) (System.currentTimeMillis() - start), "SUCCESS", null, userId);
             return true;
@@ -260,7 +310,7 @@ public class AiAnalysisService {
         long start = System.currentTimeMillis();
         AiResult result = new AiResult();
         if (llmEnabled) {
-            OllamaClient.ChatResult chat = ollamaClient.chat(system, prompt);
+            OllamaClient.ChatResult chat = chatWithFallback(system, prompt);
             if (chat != null) {
                 result.content = chat.content;
                 result.model = chat.model;
@@ -294,7 +344,7 @@ public class AiAnalysisService {
         long start = System.currentTimeMillis();
         AiResult result = new AiResult();
         if (llmEnabled) {
-            OllamaClient.ChatResult chat = ollamaClient.chat(system, prompt);
+            OllamaClient.ChatResult chat = chatWithFallback(system, prompt);
             if (chat != null) {
                 result.content = chat.content;
                 result.model = chat.model;
