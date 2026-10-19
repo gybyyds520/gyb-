@@ -3,12 +3,17 @@
     {
       "source": "student-mat.csv",
       "rows": 395,
-      "mapping": "UCI: G1/G2/G3(0-20)*5, absences→absent_count, G3<10→label=1; 行为列按别名映射"
+      "mapping": "UCI: G1/G2/G3(0-20)*5, absences→absent_count, G3<10→label=1"
     },
     {
       "source": "student-por.csv",
       "rows": 649,
-      "mapping": "UCI: G1/G2/G3(0-20)*5, absences→absent_count, G3<10→label=1; 行为列按别名映射"
+      "mapping": "UCI: G1/G2/G3(0-20)*5, absences→absent_count, G3<10→label=1"
+    },
+    {
+      "source": "xAPI-Edu-Data.csv",
+      "rows": 480,
+      "mapping": "行为: raisedhands→question_count, visited→resource_view_count, announcements+discussion→forum_post_count, absence→absent_count, 成绩等级L/G→label=1"
     }
   ]
 }

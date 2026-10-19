@@ -39,7 +39,8 @@ FEATURE_COLUMNS = [
 ]
 
 DEFAULT_TERM_ID = -1  # 外部样本统一学期占位，与库内学期区分
-DEFAULT_STUDENT_BASE = 9_000_000  # 外部学生 ID 基址，避免与库内学生冲突
+DEFAULT_STUDENT_BASE = 9_000_000  # UCI 外部学生 ID 基址（避免与库内学生冲突）
+DEFAULT_STUDENT_BASE_B = 9_100_000  # 行为风格（xAPI/天池）外部学生 ID 基址
 
 
 def norm_01(v: float, lo: float, hi: float) -> float:
@@ -73,8 +74,8 @@ def build_alias_map(header: List[str]) -> Dict[str, str]:
         "举手次数": "question_count", "举手": "question_count",
         "visitedresources": "resource_view_count", "访问课程资源频率": "resource_view_count",
         "访问资源次数": "resource_view_count", "浏览在线课件次数": "resource_view_count",
-        "announcementsview": "forum_post_count", "查看通知次数": "forum_post_count",
-        "查看公告次数": "forum_post_count", "查看公告": "forum_post_count",
+        "announcementsview": "announcements_view", "查看通知次数": "announcements_view",
+        "查看公告次数": "announcements_view", "查看公告": "announcements_view",
         "discussion": "forum_post_count", "参与讨论次数": "forum_post_count",
         "讨论次数": "forum_post_count", "参与课堂讨论次数": "forum_post_count",
         "studentabsence": "absent_count", "studentabsencedays": "absent_count",
@@ -104,7 +105,7 @@ def build_alias_map(header: List[str]) -> Dict[str, str]:
     return result
 
 
-def schema_b_uci(rows: List[Dict[str, str]], source: str) -> List[dict]:
+def schema_b_uci(rows: List[Dict[str, str]], source: str, base: int = DEFAULT_STUDENT_BASE) -> List[dict]:
     """UCI Student Performance：0-20 分制 → 百分制（×5），G3<10 视为风险。"""
     out: List[dict] = []
     for idx, r in enumerate(rows):
@@ -125,7 +126,7 @@ def schema_b_uci(rows: List[Dict[str, str]], source: str) -> List[dict]:
         study_minutes_avg = studytime * 60.0
         label = 1 if g3 < 10 else 0
         out.append({
-            "student_id": DEFAULT_STUDENT_BASE + idx,
+            "student_id": base + idx,
             "term_id": DEFAULT_TERM_ID,
             "avg_score": avg_score, "score_trend": score_trend, "score_std": score_std,
             "min_score": min_score, "fail_count": fail_count, "fail_rate": fail_rate,
@@ -140,13 +141,13 @@ def schema_b_uci(rows: List[Dict[str, str]], source: str) -> List[dict]:
     return out
 
 
-def schema_a_behavior(rows: List[Dict[str, str]], source: str) -> List[dict]:
+def schema_a_behavior(rows: List[Dict[str, str]], source: str, base: int = DEFAULT_STUDENT_BASE_B) -> List[dict]:
     """在线行为风格：举手/资源浏览/讨论/缺勤 + 成绩等级。"""
     out: List[dict] = []
     for idx, r in enumerate(rows):
         raised = to_float(r.get("question_count"))
         visited = to_float(r.get("resource_view_count"))
-        forum = to_float(r.get("forum_post_count"))
+        forum = to_float(r.get("forum_post_count")) + to_float(r.get("announcements_view"))
         absent = int(to_float(r.get("absent_count"), 7))
         avg_score = to_float(r.get("g3")) or 0.0
         cls = str(r.get("class_level", "")).strip().upper()
@@ -154,7 +155,7 @@ def schema_a_behavior(rows: List[Dict[str, str]], source: str) -> List[dict]:
         label = 1 if cls in ("L", "G", "低", "不及格") else 0
         participation = round((raised + visited + forum) / 3, 2) if (raised or visited or forum) else 0.0
         out.append({
-            "student_id": DEFAULT_STUDENT_BASE + idx,
+            "student_id": DEFAULT_STUDENT_BASE_B + idx,
             "term_id": DEFAULT_TERM_ID,
             "avg_score": avg_score, "score_trend": 0.0, "score_std": 0.0,
             "min_score": 0.0, "fail_count": 0, "fail_rate": 0.0,
@@ -172,7 +173,7 @@ def schema_a_behavior(rows: List[Dict[str, str]], source: str) -> List[dict]:
     return out
 
 
-def import_file(path: Path, out_dir: Path, meta: dict) -> int:
+def import_file(path: Path, out_dir: Path, meta: dict, offset: int = 0) -> int:
     delimiter = detect_delimiter(path)
     with path.open(encoding="utf-8", errors="replace", newline="") as f:
         reader = csv.DictReader(f, delimiter=delimiter)
@@ -181,14 +182,18 @@ def import_file(path: Path, out_dir: Path, meta: dict) -> int:
         print(f"[SKIP] {path.name}: 空文件")
         return 0
     alias = build_alias_map(reader.fieldnames or [])
-    if not any(v in ("g1", "g2", "g3") for v in alias.values()):
-        print(f"[SKIP] {path.name}: 未识别为 UCI/成绩风格（{path.name} 需含 G1/G2/G3 或成绩列）")
+    has_grade = any(v in ("g1", "g2", "g3") for v in alias.values())
+    has_class = any(v == "class_level" for v in alias.values())
+    if not has_grade and not has_class:
+        print(f"[SKIP] {path.name}: 未识别为学情成绩风格（需含 G1/G2/G3 或成绩等级列）")
         return 0
     normalized = []
     for r in rows:
         row = {alias.get(k, k): v for k, v in r.items()}
         normalized.append(row)
-    samples = schema_b_uci(normalized, str(path))
+    samples = (schema_b_uci(normalized, str(path), base=DEFAULT_STUDENT_BASE + offset)
+               if has_grade
+               else schema_a_behavior(normalized, str(path), base=DEFAULT_STUDENT_BASE_B + offset))
     if not samples:
         return 0
     out_csv = out_dir / "external_features.csv"
@@ -201,7 +206,11 @@ def import_file(path: Path, out_dir: Path, meta: dict) -> int:
     meta["files"].append({
         "source": str(path.name),
         "rows": len(samples),
-        "mapping": "UCI: G1/G2/G3(0-20)*5, absences→absent_count, G3<10→label=1; 行为列按别名映射",
+        "mapping": ("UCI: G1/G2/G3(0-20)*5, absences→absent_count, G3<10→label=1"
+                    if has_grade else
+                    "行为: raisedhands→question_count, visited→resource_view_count, "
+                    "announcements+discussion→forum_post_count, absence→absent_count, "
+                    "成绩等级L/G→label=1"),
     })
     return len(samples)
 
@@ -226,7 +235,7 @@ def main(argv: List[str]) -> int:
     for f in sorted(in_dir.rglob("*.csv")):
         if f.name in ("external_features.csv",):
             continue
-        n = import_file(f, out_dir, meta)
+        n = import_file(f, out_dir, meta, offset=imported)
         imported += n
         print(f"[OK] {f.name}: 导入 {n} 条")
 
