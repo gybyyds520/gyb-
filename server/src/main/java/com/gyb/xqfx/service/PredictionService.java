@@ -217,6 +217,13 @@ public class PredictionService {
      * 构建训练数据集：用第 n 学期特征预测第 n+1 学期是否出现不及格
      */
     public List<MlFeatureRow> buildTrainingDataset() {
+        return buildTrainingDataset(true);
+    }
+
+    /**
+     * 构建训练数据集（可指定是否并入外部开源样本，用于训练对比实验）
+     */
+    public List<MlFeatureRow> buildTrainingDataset(boolean includeExternal) {
         List<Term> terms = termMapper.selectList(null);
         terms.sort(Comparator.comparing(Term::getId));
         if (terms.size() < 2) {
@@ -235,7 +242,7 @@ public class PredictionService {
             }
         }
         // 并入外部开源样本（天池/UCI/xAPI，import_external.py 生成；term_id<0 标识，来源留痕）
-        if (externalDatasetLoader != null && externalDatasetLoader.exists()) {
+        if (includeExternal && externalDatasetLoader != null && externalDatasetLoader.exists()) {
             List<MlFeatureRow> external = externalDatasetLoader.load();
             if (!external.isEmpty()) {
                 dataset.addAll(external);
@@ -288,6 +295,67 @@ public class PredictionService {
         mlModelMapper.insert(model);
         log.info("模型训练并登记完成：{} v{} 样本数={}", modelType, res.getVersion(), res.getSampleCount());
         return model;
+    }
+
+    /**
+     * 训练对比实验：同一模型、同一测试切分，对比"仅校内样本"与"校内+外部开源样本"的评估指标，
+     * 量化外部数据对训练效果的贡献（直接回应答辩"数据源怎么训练"）。
+     */
+    public Map<String, Object> trainCompare(String modelType) {
+        List<MlFeatureRow> baseline = buildTrainingDataset(false);
+        List<MlFeatureRow> withExternal = buildTrainingDataset(true);
+        MlDtos.TrainResponse base = mlServiceClient.train(modelType, baseline, 0.25);
+        MlDtos.TrainResponse ext = mlServiceClient.train(modelType, withExternal, 0.25);
+        if (base == null || ext == null) {
+            throw new BusinessException("预测服务未返回训练结果");
+        }
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("modelType", modelType);
+        result.put("baseline", Map.of("sampleCount", base.getSampleCount() == null ? 0 : base.getSampleCount(),
+                "metrics", base.getMetrics() == null ? Map.of() : base.getMetrics()));
+        result.put("withExternal", Map.of("sampleCount", ext.getSampleCount() == null ? 0 : ext.getSampleCount(),
+                "metrics", ext.getMetrics() == null ? Map.of() : ext.getMetrics()));
+
+        Map<String, Object> delta = new java.util.LinkedHashMap<>();
+        for (String k : List.of("accuracy", "precision", "recall", "f1", "roc_auc")) {
+            double a = metricValue(base.getMetrics(), k);
+            double b = metricValue(ext.getMetrics(), k);
+            delta.put(k, Math.round((b - a) * 10000.0) / 10000.0);
+        }
+        result.put("delta", delta);
+        int externalCount = (ext.getSampleCount() == null ? 0 : ext.getSampleCount())
+                - (base.getSampleCount() == null ? 0 : base.getSampleCount());
+        result.put("externalCount", externalCount);
+        result.put("conclusion", buildCompareConclusion(delta));
+        return result;
+    }
+
+    private double metricValue(Map<String, Object> metrics, String key) {
+        if (metrics == null || !metrics.containsKey(key)) {
+            return 0.0;
+        }
+        Object v = metrics.get(key);
+        return v instanceof Number ? ((Number) v).doubleValue() : 0.0;
+    }
+
+    private String buildCompareConclusion(Map<String, Object> delta) {
+        double aucDelta = num(delta.get("roc_auc"));
+        double f1Delta = num(delta.get("f1"));
+        if (aucDelta > 0.01 || f1Delta > 0.01) {
+            return "外部开源样本使模型泛化指标提升（AUC " + (aucDelta > 0 ? "+" + aucDelta : aucDelta)
+                    + "，F1 " + (f1Delta > 0 ? "+" + f1Delta : f1Delta) + "），扩充训练样本对预测效果有正向贡献";
+        }
+        if (aucDelta < -0.01 || f1Delta < -0.01) {
+            return "外部样本与校内学情存在分布差异，指标略有波动（AUC " + aucDelta + "，F1 " + f1Delta
+                    + "），可按需通过 xqfx.ml.external-dataset 开关控制是否并入";
+        }
+        return "外部样本并入后模型指标基本持平（AUC " + aucDelta + "，F1 " + f1Delta
+                + "），外部数据主要价值为扩充样本量与类别多样性";
+    }
+
+    private double num(Object v) {
+        return v instanceof Number ? ((Number) v).doubleValue() : 0.0;
     }
 
     /**

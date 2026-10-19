@@ -62,6 +62,14 @@ public class PredictionController {
         return Result.success(predictionService.train(modelType), "模型训练完成");
     }
 
+    @Operation(summary = "训练对比实验（校内 vs 校内+外部开源样本）")
+    @PostMapping("/train-compare")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
+    public Result<Map<String, Object>> trainCompare(
+            @RequestParam(defaultValue = "random_forest") String modelType) {
+        return Result.success(predictionService.trainCompare(modelType), "对比实验完成");
+    }
+
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
     @Operation(summary = "执行批量预测")
     @PostMapping("/run")

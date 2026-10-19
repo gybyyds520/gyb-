@@ -11,6 +11,7 @@
               <el-option label="XGBoost" value="xgboost" />
             </el-select>
             <el-button type="primary" :loading="training" @click="doTrain">训练模型</el-button>
+            <el-button type="success" plain :loading="comparing" @click="doCompare">训练对比实验</el-button>
           </div>
         </div>
       </template>
@@ -19,6 +20,32 @@
         <div ref="compareRef" class="compare-chart"></div>
         <el-empty v-if="!compareLoading && !compare.length" description="暂无已训练模型，点击「训练模型」开始" :image-size="60" />
       </div>
+    </el-card>
+
+    <el-card v-if="compareResult" shadow="never" style="margin-top: 16px">
+      <template #header>
+        <div class="card-header">
+          <span>外部开源数据效果对比（{{ compareResult.modelType }}）</span>
+          <el-tag size="small" type="info">外部样本 +{{ compareResult.externalCount }} 条</el-tag>
+        </div>
+      </template>
+      <el-table :data="compareTable" border stripe size="small">
+        <el-table-column prop="name" label="指标" width="140" />
+        <el-table-column label="仅校内样本" width="160" align="center">
+          <template #default="{ row }"><b>{{ row.base }}</b></template>
+        </el-table-column>
+        <el-table-column label="校内 + 外部开源" width="160" align="center">
+          <template #default="{ row }"><b class="ext-val">{{ row.ext }}</b></template>
+        </el-table-column>
+        <el-table-column label="变化（Δ）" min-width="120" align="center">
+          <template #default="{ row }">
+            <span :class="row.delta >= 0 ? 'delta-up' : 'delta-down'">
+              {{ row.delta >= 0 ? '+' : '' }}{{ row.delta }}
+            </span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-alert :title="compareResult.conclusion" type="success" :closable="false" style="margin-top: 12px" />
     </el-card>
 
     <el-card shadow="never" style="margin-top: 16px">
@@ -77,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { pageModels, getModel, modelCompare, updateModelStatus } from '@/api/model'
@@ -85,6 +112,8 @@ import request from '@/api/request'
 
 const trainType = ref('random_forest')
 const training = ref(false)
+const comparing = ref(false)
+const compareResult = ref(null)
 const models = ref([])
 const compare = ref([])
 const compareLoading = ref(false)
@@ -104,9 +133,35 @@ const statusTag = (s) => ({ TRAINED: 'info', DEPLOYED: 'success', DISABLED: 'inf
 
 const METRIC_CN = {
   accuracy: '准确率', precision: '精确率', recall: '召回率', f1: 'F1 值',
-  auc: 'AUC', rmse: 'RMSE', mse: 'MSE', mae: 'MAE'
+  roc_auc: 'AUC', auc: 'AUC', rmse: 'RMSE', mse: 'MSE', mae: 'MAE'
 }
 const metricName = (k) => METRIC_CN[k] || k
+
+const compareTable = computed(() => {
+  const r = compareResult.value
+  if (!r) return []
+  const keys = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
+  return keys.map((k) => ({
+    name: metricName(k),
+    base: fmt(r.baseline?.metrics?.[k]),
+    ext: fmt(r.withExternal?.metrics?.[k]),
+    delta: fmtDelta(r.delta?.[k])
+  }))
+})
+const fmt = (v) => (typeof v === 'number' ? v.toFixed(4) : (v ?? '-'))
+const fmtDelta = (v) => (typeof v === 'number' ? v.toFixed(4) : '-')
+
+async function doCompare() {
+  comparing.value = true
+  try {
+    compareResult.value = await request.post('/prediction/train-compare', null, { params: { modelType: trainType.value } })
+    ElMessage.success('对比实验完成，外部数据贡献已量化')
+  } catch (e) {
+    ElMessage.error('对比实验失败：' + (e?.message || e))
+  } finally {
+    comparing.value = false
+  }
+}
 
 async function doTrain() {
   training.value = true
@@ -265,5 +320,19 @@ onMounted(() => {
   font-weight: 700;
   color: #303133;
   margin-top: 4px;
+}
+
+.ext-val {
+  color: #67c23a;
+}
+
+.delta-up {
+  color: #67c23a;
+  font-weight: 700;
+}
+
+.delta-down {
+  color: #f56c6c;
+  font-weight: 700;
 }
 </style>

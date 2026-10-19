@@ -115,6 +115,7 @@ npm run pack         # 打包 NSIS 安装包 + 绿色版（release/ 目录）
 - **训练数据**：`PredictionService.buildTrainingDataset()` 用历史学期特征 + 下学期是否挂科做标签（有监督时间序列切分），LR/RF/XGB 训练与评估，冷启动由 `ConstantPredictor` 兜底。
 - **外部开源数据补充**（天池/开源数据池）：`ml/data/import_external.py` 把天池「学生成绩预测」（[数据集 179206](https://tianchi.aliyun.com/dataset/179206)）、UCI Student Performance 等 CSV 映射为训练特征（`external_features.csv` + 来源留痕 `source_info.json`），`ExternalDatasetLoader` 自动并入训练集（`term_id<0` 标识外部样本）。接入详情见 [docs/天池数据接入.md](docs/天池数据接入.md)。
 - **诊断接口** `GET /ml/dataset-summary`：返回可训练样本数（含 `externalCount` 外部样本数）、学生数、学期跨度、风险/正常类别分布、特征覆盖率与数据状态（READY / COLD_START / IMBALANCED），用于答辩与生产环境数据健康度检查。
+- **训练对比实验** `POST /prediction/train-compare?modelType=...`：同模型同切分对比「仅校内」与「校内+外部开源」，量化外部数据贡献（实测 random_forest：1574 条样本 vs 50 条，AUC 0.933→0.980、F1 0.824→0.885，详见 [docs/天池数据接入.md](docs/天池数据接入.md)）；前端「模型管理与评估中心」一键触发并展示。
 - 演示环境数据由 bootstrap（200 名学生）与 realtime 模拟流提供；生产环境切换 `xqfx.acad.provider` 接入真实教务数据。
 
 ## 五、当前进度
