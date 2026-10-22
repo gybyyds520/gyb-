@@ -66,10 +66,10 @@ body {
   display: none;
 }
 
-/* 移动端响应式：≤768px */
+/* 移动端响应式：≤768px（布局清晰化：轻卡片 + 大数字 + 通屏弹窗 + 舒适触控） */
 @media (max-width: 768px) {
   .page-container {
-    padding: 10px;
+    padding: 12px;
     padding-bottom: 70px; /* 给底部 TabBar 留空间 */
   }
 
@@ -79,5 +79,105 @@ body {
 
   .hidden-mobile {
     display: none !important;
+  }
+
+  /* 1) 卡片轻量化：去掉重阴影，弱化边框，统一圆角与标题层级 */
+  .el-card {
+    border-radius: 14px;
+    box-shadow: none;
+    border: 1px solid rgba(31, 45, 105, 0.06);
+    background: #fff;
+  }
+
+  .el-card__header {
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2d69;
+    border-bottom: 1px solid rgba(31, 45, 105, 0.06);
+  }
+
+  .el-card__body {
+    padding: 14px;
+  }
+
+  /* 2) 统计数字大而醒目，标题弱化 */
+  .stat-card .stat-title {
+    font-size: 12px;
+    color: #909399;
+  }
+
+  .stat-card .stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .stat-card .stat-icon {
+    font-size: 34px;
+  }
+
+  /* 3) 弹窗通屏化：无论写死 640/720px 都收敛到屏宽，不再溢出 */
+  .el-dialog {
+    width: auto !important;
+    max-width: calc(100vw - 24px);
+    --el-dialog-width: calc(100vw - 24px);
+    border-radius: 14px;
+    margin: 0 auto;
+  }
+
+  .el-dialog__body {
+    max-height: 62vh;
+    overflow-y: auto;
+  }
+
+  /* 4) 表格小字号 + 表头弱化，横向滚动更易读 */
+  .el-table {
+    font-size: 12px;
+  }
+
+  .el-table th.el-table__cell {
+    font-size: 12px;
+    font-weight: 600;
+    color: #606266;
+  }
+
+  /* 5) 触控友好：按钮与输入框最小高度 */
+  .el-button {
+    min-height: 36px;
+  }
+
+  .el-button--small {
+    min-height: 30px;
+  }
+
+  .el-input__wrapper,
+  .el-textarea__inner {
+    min-height: 36px;
+  }
+
+  /* 6) 图表统一高度：避免 300~360px 的高图撑满一屏，信息一屏可见更多 */
+  .chart-box {
+    height: 250px !important;
+  }
+
+  /* 7) 提示条与空状态紧凑清晰 */
+  .el-alert {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  .el-empty__description {
+    font-size: 12px;
+  }
+
+  /* 8) 顶部筛选区：换行自然、间距紧凑 */
+  .el-form--inline .el-form-item {
+    margin-right: 8px;
+    margin-bottom: 8px;
+  }
+
+  .card-header {
+    gap: 6px;
   }
 }
