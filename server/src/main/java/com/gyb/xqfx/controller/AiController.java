@@ -67,16 +67,19 @@ public class AiController {
     public Result<Map<String, Object>> health() {
         boolean localAvailable = ollamaClient.isAvailable();
         boolean cloudConfigured = remoteLlmClient.isConfigured();
-        String activeProvider = localAvailable ? "LOCAL" : (cloudConfigured ? "CLOUD" : "RULE_FALLBACK");
+        // 云端连通性真实探测（GET /models，带 60s TTL 缓存）
+        boolean cloudAvailable = cloudConfigured && remoteLlmClient.isAvailable();
+        String activeProvider = localAvailable ? "LOCAL" : (cloudAvailable ? "CLOUD" : "RULE_FALLBACK");
         Map<String, Object> data = new HashMap<>();
         data.put("localModel", llmProvider == null || !"cloud".equals(llmProvider) ? "llama3.2:3b" : "cloud-only");
         data.put("localAvailable", localAvailable);
         data.put("cloudConfigured", cloudConfigured);
-        data.put("cloudAvailable", cloudConfigured);
+        data.put("cloudAvailable", cloudAvailable);
+        data.put("cloudProbeError", remoteLlmClient.probeError());
         data.put("activeProvider", activeProvider);
         data.put("providerMode", llmProvider);
         return Result.success(data,
-                localAvailable ? "本地 Ollama 服务可用" : (cloudConfigured ? "本地不可用，已配置云端通道" : "本地不可用，将使用规则化降级"));
+                localAvailable ? "本地 Ollama 服务可用" : (cloudAvailable ? "本地不可用，云端通道已连通" : "本地不可用，将使用规则化降级"));
     }
 
     @Operation(summary = "本机已安装模型列表")

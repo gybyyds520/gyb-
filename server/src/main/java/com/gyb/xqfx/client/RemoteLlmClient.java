@@ -42,6 +42,12 @@ public class RemoteLlmClient {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
+    /** 连通性探测缓存（60 秒 TTL，避免每次健康检查都发起真实请求） */
+    private static final long PROBE_TTL_MS = 60_000L;
+    private volatile boolean probeAvailable = false;
+    private volatile long probeAtMs = 0L;
+    private volatile String probeError = "";
+
     public RemoteLlmClient(@Value("${xqfx.llm.cloud.base-url:}") String baseUrl,
                            @Value("${xqfx.llm.cloud.api-key:}") String apiKey,
                            @Value("${xqfx.llm.cloud.model:gpt-4o-mini}") String model,
@@ -63,6 +69,48 @@ public class RemoteLlmClient {
     /** 是否配置了云端通道（未配置则所有调用返回不可用） */
     public boolean isConfigured() {
         return !baseUrl.isEmpty() && !apiKey.isEmpty();
+    }
+
+    /**
+     * 云端连通性探测（GET /models，60 秒 TTL 缓存）。
+     * <p>仅当配置了 api-key 时才探测；未配置或探测失败返回 false。
+     * 探测请求不携带业务数据、开销极小，用于健康检查真实反映云端通道可用性。</p>
+     */
+    public boolean isAvailable() {
+        if (!isConfigured()) {
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        if (now - probeAtMs < PROBE_TTL_MS) {
+            return probeAvailable;
+        }
+        probeAtMs = now;
+        try {
+            HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/models"))
+                    .header("Authorization", "Bearer " + apiKey)
+                    .timeout(Duration.ofSeconds(10))
+                    .GET()
+                    .build();
+            HttpResponse<String> resp = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            boolean ok = resp.statusCode() == 200;
+            probeAvailable = ok;
+            probeError = ok ? "" : "HTTP " + resp.statusCode();
+            return ok;
+        } catch (Exception e) {
+            probeAvailable = false;
+            probeError = e.getMessage();
+            return false;
+        }
+    }
+
+    /** 最近一次探测是否可用（供健康检查展示缓存结果） */
+    public boolean lastProbeResult() {
+        return probeAvailable;
+    }
+
+    /** 最近一次探测的错误信息（无错误时为空字符串） */
+    public String probeError() {
+        return probeError;
     }
 
     /**

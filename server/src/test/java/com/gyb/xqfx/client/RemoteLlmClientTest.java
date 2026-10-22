@@ -106,6 +106,83 @@ class RemoteLlmClientTest {
     }
 
     @Test
+    @DisplayName("脱敏边界：短学号/业务编号不被误伤")
+    void testSanitizeBoundary() {
+        RemoteLlmClient c = newClient("sk-test");
+        c.chat("系统提示", "学号2023010111，订单号123456789，成绩89.5，电话13812345678转分机88");
+        String body = lastRequestBody.get();
+        assertNotNull(body);
+        // 手机号被打码，前后缀保留
+        assertTrue(body.contains("138****5678转分机88"));
+        // 10 位学号 / 9 位订单号不被误伤
+        assertTrue(body.contains("2023010111"));
+        assertTrue(body.contains("123456789"));
+        // 原文手机号不再出现
+        assertFalse(body.contains("13812345678"));
+    }
+
+    @Test
+    @DisplayName("连通性探测：/models 返回 200 即可用，带缓存")
+    void testProbe() throws IOException {
+        HttpServer probe = HttpServer.create(new InetSocketAddress(0), 0);
+        AtomicReference<Integer> hitCount = new AtomicReference<>(0);
+        probe.createContext("/models", exchange -> {
+            hitCount.set(hitCount.get() + 1);
+            byte[] resp = "{\"data\":[]}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, resp.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(resp);
+            }
+        });
+        probe.start();
+        try {
+            RemoteLlmClient c = new RemoteLlmClient(
+                    "http://127.0.0.1:" + probe.getAddress().getPort(), "sk-test",
+                    "deepseek-chat", "10s", true, new ObjectMapper());
+            assertTrue(c.isConfigured());
+            assertTrue(c.isAvailable());
+            assertTrue(c.lastProbeResult());
+            // 60s TTL 内重复探测走缓存，不重复请求
+            assertTrue(c.isAvailable());
+            assertEquals(1, hitCount.get());
+        } finally {
+            probe.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("连通性探测：服务端异常时不可用并记录错误")
+    void testProbeFailure() throws IOException {
+        HttpServer probe = HttpServer.create(new InetSocketAddress(0), 0);
+        probe.createContext("/models", exchange -> {
+            byte[] resp = "{\"error\":\"unauthorized\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(401, resp.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(resp);
+            }
+        });
+        probe.start();
+        try {
+            RemoteLlmClient c = new RemoteLlmClient(
+                    "http://127.0.0.1:" + probe.getAddress().getPort(), "sk-test",
+                    "deepseek-chat", "10s", true, new ObjectMapper());
+            assertFalse(c.isAvailable());
+            assertFalse(c.lastProbeResult());
+            assertTrue(c.probeError().contains("401"));
+        } finally {
+            probe.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("未配置 api-key 时探测直接不可用")
+    void testProbeNotConfigured() {
+        RemoteLlmClient c = new RemoteLlmClient(baseUrl, "", "deepseek-chat", "10s", true, new ObjectMapper());
+        assertFalse(c.isAvailable());
+    }
+
+    @Test
     @DisplayName("流式对话按 SSE 增量拼接")
     void testChatStream() {
         RemoteLlmClient c = newClient("sk-test");

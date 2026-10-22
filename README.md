@@ -107,9 +107,9 @@ npm run pack         # 打包 NSIS 安装包 + 绿色版（release/ 目录）
 系统采用「本地 Ollama 优先、外部 AI 云端兜底」双轨路由，回应当前高校对大模型数据安全与可用性的要求：
 
 - **路由模式** `xqfx.llm.provider=auto`：本地优先 → 本地不可用时若开启 `xqfx.ollama.fallback-to-cloud` 则转云端 → 均不可用时规则化降级（功能不中断）。
-- **云端通道** `xqfx.llm.cloud.*`（OpenAI 兼容网关）：默认**智谱开放平台 GLM-4.7-Flash**（输入/输出/缓存长期免费、200K 上下文）；也可切换 DeepSeek（`https://api.deepseek.com/v1` + `deepseek-chat`）或通义（`https://dashscope.aliyuncs.com/compatible-mode/v1` + `qwen-turbo`）。**api-key 留空则云端通道自动关闭，行为与升级前完全一致（零风险升级）**；在智谱开放平台 `https://open.bigmodel.cn` 控制台创建 API Key 填入后，将 `xqfx.ollama.fallback-to-cloud` 改为 `true` 即启用云端兜底。
-- **出校脱敏** `xqfx.privacy.mask-llm-prompt=true`：发送云端前对手机号、身份证自动打码；调用日志 `ai_call_log` 记录实际 provider 来源（本地/云端/规则），可审计。
-- **健康检查** `GET /ai/health` 返回 Provider 状态：`localAvailable` / `cloudConfigured` / `activeProvider`（LOCAL / CLOUD / RULE_FALLBACK）/ `providerMode`。
+- **云端通道** `xqfx.llm.cloud.*`（OpenAI 兼容网关）：默认**智谱开放平台 GLM-4.7-Flash**（输入/输出/缓存长期免费、200K 上下文）；也可切换 DeepSeek（`https://api.deepseek.com/v1` + `deepseek-chat`）或通义（`https://dashscope.aliyuncs.com/compatible-mode/v1` + `qwen-turbo`）。**api-key 通过环境变量 `XQFX_LLM_API_KEY` 注入（不落配置文件、不进 git）；未设置则云端通道自动关闭，行为与升级前完全一致（零风险升级）**。本机设置示例：PowerShell 执行 `[Environment]::SetEnvironmentVariable('XQFX_LLM_API_KEY','<你的Key>','User')` 后重启后端；在智谱开放平台 `https://open.bigmodel.cn` 控制台创建 API Key。
+- **出校脱敏** `xqfx.privacy.mask-llm-prompt=true`：发送云端前对手机号、身份证自动打码（含边界防误伤，如学号/订单号不打码）；调用日志 `ai_call_log` 记录实际 provider 来源（本地/云端/规则），可审计。
+- **健康检查** `GET /ai/health` 返回 Provider 状态：`localAvailable` / `cloudConfigured` / `cloudAvailable`（**真实连通性探测 GET /models，60s TTL 缓存**）/ `cloudProbeError` / `activeProvider`（LOCAL / CLOUD / RULE_FALLBACK）/ `providerMode`。
 
 ### 8. 预测模型训练数据源诊断
 
