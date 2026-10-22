@@ -31,6 +31,11 @@
               模型：{{ m.meta.model }} · 学生：{{ m.meta.studentName || '-' }} · tokens：{{ m.meta.totalTokens ?? '-' }}
             </div>
             <div class="msg-text" v-html="renderText(m.text)"></div>
+            <div class="msg-actions" v-if="m.role === 'bot' && m.text">
+              <el-button link size="small" type="primary" @click="speak(m)">
+                {{ speakingIndex === i ? '停止朗读' : '🔊 朗读' }}
+              </el-button>
+            </div>
             <div v-if="m.error" class="msg-error">{{ m.error }}</div>
           </div>
         </div>
@@ -44,6 +49,9 @@
       </div>
 
       <div class="input-row">
+        <el-button class="voice-btn" :type="listening ? 'danger' : 'default'" @click="voiceInput">
+          {{ listening ? '⏺ 录音中…' : '🎤 语音输入' }}
+        </el-button>
         <el-input v-model="draft" type="textarea" :rows="2" resize="none"
                   placeholder="输入问题，例如：张三成绩下滑的可能原因有哪些？" @keydown.enter.exact.prevent="send" />
         <el-button type="primary" :loading="streaming" class="send-btn" @click="send">
@@ -71,6 +79,10 @@ const students = ref([])
 const termId = ref(null)
 const terms = ref([])
 const streaming = ref(false)
+const listening = ref(false)
+const speakingIndex = ref(-1)
+let recognizer = null
+let lastUtterance = null
 const msgBox = ref(null)
 let sessionSeq = 0
 
@@ -207,6 +219,97 @@ function scrollBottom() {
   nextTick(() => {
     if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
   })
+}
+
+// ==================== 语音交互（借鉴 AI 学业助手） ====================
+
+/** 语音输入：识别中文语音填入输入框并自动发送（Chrome/Edge 支持，其余浏览器降级提示） */
+function voiceInput() {
+  if (listening.value) {
+    stopVoiceInput()
+    return
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+  if (!SR) {
+    ElMessage.warning('当前浏览器不支持语音识别，请使用 Chrome 或 Edge 浏览器')
+    return
+  }
+  if (streaming.value) {
+    ElMessage.warning('请等待当前回答生成完成')
+    return
+  }
+  recognizer = new SR()
+  recognizer.lang = 'zh-CN'
+  recognizer.interimResults = false
+  recognizer.continuous = false
+  listening.value = true
+  recognizer.onresult = (event) => {
+    const text = (event.results[0][0].transcript || '').trim()
+    listening.value = false
+    if (!text) return
+    draft.value = text
+    send()
+  }
+  recognizer.onerror = () => {
+    listening.value = false
+    ElMessage.warning('语音识别失败，请重试或直接输入')
+  }
+  recognizer.onend = () => {
+    listening.value = false
+  }
+  recognizer.start()
+}
+
+function stopVoiceInput() {
+  if (recognizer) {
+    try { recognizer.stop() } catch { /* ignore */ }
+  }
+  listening.value = false
+}
+
+/** 朗读 AI 回复（中文 TTS），再点一次停止 */
+function speak(msg) {
+  const idx = messages.value.indexOf(msg)
+  if (speakingIndex.value === idx) {
+    stopSpeak()
+    return
+  }
+  if (!('speechSynthesis' in window)) {
+    ElMessage.warning('当前浏览器不支持语音朗读')
+    return
+  }
+  stopSpeak()
+  const text = stripMarkdown(msg.text || '')
+  if (!text) return
+  lastUtterance = new SpeechSynthesisUtterance(text)
+  lastUtterance.lang = 'zh-CN'
+  lastUtterance.rate = 1.0
+  lastUtterance.onend = () => { speakingIndex.value = -1 }
+  lastUtterance.onerror = () => { speakingIndex.value = -1 }
+  speakingIndex.value = idx
+  speechSynthesis.speak(lastUtterance)
+}
+
+function stopSpeak() {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel()
+  }
+  speakingIndex.value = -1
+}
+
+/** 去除 Markdown 标记，保留纯文本用于朗读 */
+function stripMarkdown(text) {
+  return text
+    .replace(/```[\s\S]*?```/g, '（代码块）')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/`(.*?)`/g, '$1')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/[|>]/g, ' ')
+    .replace(/[*_~]/g, '')
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+    .replace(/!?\[(.*?)\]\((.*?)\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 async function searchStudent(kw) {
@@ -353,10 +456,20 @@ onMounted(async () => {
   border-radius: 16px;
 }
 
+.msg-actions {
+  margin-top: 4px;
+  text-align: left;
+}
+
 .input-row {
   display: flex;
   gap: 8px;
   align-items: flex-end;
+}
+
+.voice-btn {
+  height: 56px;
+  flex-shrink: 0;
 }
 
 .send-btn {
