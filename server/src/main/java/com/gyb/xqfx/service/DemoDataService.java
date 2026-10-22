@@ -5,6 +5,7 @@ import com.gyb.xqfx.entity.Attendance;
 import com.gyb.xqfx.entity.Clazz;
 import com.gyb.xqfx.entity.College;
 import com.gyb.xqfx.entity.Course;
+import com.gyb.xqfx.entity.CourseEnrollment;
 import com.gyb.xqfx.entity.CourseOffering;
 import com.gyb.xqfx.entity.Major;
 import com.gyb.xqfx.entity.OnlineBehavior;
@@ -15,6 +16,7 @@ import com.gyb.xqfx.entity.Term;
 import com.gyb.xqfx.mapper.AttendanceMapper;
 import com.gyb.xqfx.mapper.ClazzMapper;
 import com.gyb.xqfx.mapper.CollegeMapper;
+import com.gyb.xqfx.mapper.CourseEnrollmentMapper;
 import com.gyb.xqfx.mapper.CourseMapper;
 import com.gyb.xqfx.mapper.CourseOfferingMapper;
 import com.gyb.xqfx.mapper.MajorMapper;
@@ -32,7 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +66,7 @@ public class DemoDataService {
     private final CourseMapper courseMapper;
     private final TeacherMapper teacherMapper;
     private final CourseOfferingMapper courseOfferingMapper;
+    private final CourseEnrollmentMapper enrollmentMapper;
     private final StudentMapper studentMapper;
     private final ScoreMapper scoreMapper;
     private final AttendanceMapper attendanceMapper;
@@ -242,33 +247,76 @@ public class DemoDataService {
         }
         summary.put("student", students.size());
 
-        // 重新加载全部学生用于生成成绩
+        // 重新加载全部学生
         List<Student> allStudents = studentMapper.selectList(null);
-
-        // 8. 成绩（学生 × 课程 × 学期）
-        List<Score> scores = new ArrayList<>();
+        Map<Long, Student> studentById = new LinkedHashMap<>();
         for (Student s : allStudents) {
-            double base = 62 + random.nextGaussian() * 12;   // 学生基础水平
-            for (Term t : terms) {
-                for (Course c : courses) {
-                    double v = base + random.nextGaussian() * 8 - (c.getId() % 3) * 2;
-                    v = Math.max(28, Math.min(99, v));
-                    BigDecimal total = new BigDecimal(v).setScale(1, RoundingMode.HALF_UP);
-                    Score sc = new Score();
-                    sc.setStudentId(s.getId());
-                    sc.setCourseId(c.getId());
-                    sc.setTermId(t.getId());
-                    sc.setCourseOfferingId(offeringKeyToId.get(t.getId() + "#" + c.getId()));
-                    sc.setUsualScore(total.add(new BigDecimal(random.nextInt(8) - 2)).setScale(1, RoundingMode.HALF_UP));
-                    sc.setMidScore(total.add(new BigDecimal(random.nextInt(10) - 5)).setScale(1, RoundingMode.HALF_UP));
-                    sc.setFinalScore(total);
-                    sc.setTotalScore(total);
-                    sc.setExamStatus("NORMAL");
-                    sc.setIsPass(total.compareTo(new BigDecimal("60")) >= 0 ? 1 : 0);
-                    sc.setGradePoint(ScoreServiceImpl.calcGradePoint(total));
-                    sc.setIsRetake(0);
-                    scores.add(sc);
+            studentById.put(s.getId(), s);
+        }
+
+        // 8. 选课关系（每门开课约 70% 学生；已存在的选课保留）
+        //    成绩只属于选课学生 → 普通教师可见范围收敛为自己的学生（数据范围隔离）
+        Map<Long, List<Long>> enrolledByOffering = new LinkedHashMap<>();
+        int enrollCreated = 0;
+        for (Map.Entry<String, Long> e : offeringKeyToId.entrySet()) {
+            Long offeringId = e.getValue();
+            List<CourseEnrollment> exists = enrollmentMapper.selectList(
+                    new LambdaQueryWrapper<CourseEnrollment>()
+                            .eq(CourseEnrollment::getCourseOfferingId, offeringId));
+            if (!exists.isEmpty()) {
+                enrolledByOffering.put(offeringId,
+                        exists.stream().map(CourseEnrollment::getStudentId).toList());
+                continue;
+            }
+            Collections.shuffle(allStudents, random);
+            int take = Math.max(1, (int) Math.round(allStudents.size() * 0.7));
+            List<Long> ids = new ArrayList<>();
+            for (int k = 0; k < take && k < allStudents.size(); k++) {
+                Student st = allStudents.get(k);
+                CourseEnrollment ce = new CourseEnrollment();
+                ce.setCourseOfferingId(offeringId);
+                ce.setStudentId(st.getId());
+                ce.setEnrollTime(LocalDateTime.now());
+                enrollmentMapper.insert(ce);
+                ids.add(st.getId());
+                enrollCreated++;
+            }
+            enrolledByOffering.put(offeringId, ids);
+        }
+        summary.put("courseEnrollment", enrollCreated);
+
+        // 9. 成绩（仅选课学生 × 开课；未选课学生无成绩 → 教师数据范围隔离生效）
+        List<Score> scores = new ArrayList<>();
+        for (Map.Entry<String, Long> e : offeringKeyToId.entrySet()) {
+            String key = e.getKey();
+            Long offeringId = e.getValue();
+            String[] parts = key.split("#");
+            Long termId = Long.parseLong(parts[0]);
+            Long courseId = Long.parseLong(parts[1]);
+            List<Long> enrolledIds = enrolledByOffering.getOrDefault(offeringId, List.of());
+            for (Long studentId : enrolledIds) {
+                Student s = studentById.get(studentId);
+                if (s == null) {
+                    continue;
                 }
+                double base = 62 + random.nextGaussian() * 12;   // 学生基础水平
+                double v = base + random.nextGaussian() * 8 - (courseId % 3) * 2;
+                v = Math.max(28, Math.min(99, v));
+                BigDecimal total = new BigDecimal(v).setScale(1, RoundingMode.HALF_UP);
+                Score sc = new Score();
+                sc.setStudentId(s.getId());
+                sc.setCourseId(courseId);
+                sc.setTermId(termId);
+                sc.setCourseOfferingId(offeringId);
+                sc.setUsualScore(total.add(new BigDecimal(random.nextInt(8) - 2)).setScale(1, RoundingMode.HALF_UP));
+                sc.setMidScore(total.add(new BigDecimal(random.nextInt(10) - 5)).setScale(1, RoundingMode.HALF_UP));
+                sc.setFinalScore(total);
+                sc.setTotalScore(total);
+                sc.setExamStatus("NORMAL");
+                sc.setIsPass(total.compareTo(new BigDecimal("60")) >= 0 ? 1 : 0);
+                sc.setGradePoint(ScoreServiceImpl.calcGradePoint(total));
+                sc.setIsRetake(0);
+                scores.add(sc);
             }
         }
         if (!scores.isEmpty()) {
@@ -332,6 +380,7 @@ public class DemoDataService {
         attendanceMapper.delete(new LambdaQueryWrapper<Attendance>().isNotNull(Attendance::getId));
         scoreMapper.delete(new LambdaQueryWrapper<Score>().isNotNull(Score::getId));
         courseOfferingMapper.delete(new LambdaQueryWrapper<CourseOffering>().isNotNull(CourseOffering::getId));
+        enrollmentMapper.delete(new LambdaQueryWrapper<CourseEnrollment>().isNotNull(CourseEnrollment::getId));
         studentMapper.delete(new LambdaQueryWrapper<Student>().isNotNull(Student::getId));
         teacherMapper.delete(new LambdaQueryWrapper<Teacher>().isNotNull(Teacher::getId));
         courseMapper.delete(new LambdaQueryWrapper<Course>().isNotNull(Course::getId));

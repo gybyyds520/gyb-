@@ -236,7 +236,7 @@ public class TodoService {
                         .in(ParentFeedback::getStudentId, children)
                         .eq(ParentFeedback::getParentId, userId)
                         .orderByDesc(ParentFeedback::getCreateTime)
-                        .last("8"));
+                        .last("limit 8"));
         List<TodoGroupVO.TodoItemVO> feedbackItems = feedbacks.stream().map(f -> {
             TodoGroupVO.TodoItemVO it = new TodoGroupVO.TodoItemVO();
             it.setId(f.getId());

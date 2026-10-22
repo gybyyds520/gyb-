@@ -1,0 +1,282 @@
+{
+  "cases": [
+    {
+      "name": "监察中心概览",
+      "path": "/api/monitor/overview",
+      "allowed": [
+        "ADMIN"
+      ],
+      "row": [
+        "监察中心概览",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "仅管理员"
+    },
+    {
+      "name": "监察-学生全景",
+      "path": "/api/monitor/student/1",
+      "allowed": [
+        "ADMIN"
+      ],
+      "row": [
+        "监察-学生全景",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "仅管理员"
+    },
+    {
+      "name": "系统账号-demo",
+      "path": "/api/sys/accounts/demo",
+      "allowed": [
+        "ADMIN"
+      ],
+      "row": [
+        "系统账号-demo",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "仅管理员"
+    },
+    {
+      "name": "导出成绩",
+      "path": "/api/export/scores?format=json",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "导出成绩",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "教师系可导出"
+    },
+    {
+      "name": "预警工单导出",
+      "path": "/api/export/tickets?format=json",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "预警工单导出",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "教师系可导出"
+    },
+    {
+      "name": "学生门户概览",
+      "path": "/api/portal/overview",
+      "allowed": [
+        "STUDENT"
+      ],
+      "row": [
+        "学生门户概览",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "仅学生"
+    },
+    {
+      "name": "学生门户成绩",
+      "path": "/api/portal/scores",
+      "allowed": [
+        "STUDENT"
+      ],
+      "row": [
+        "学生门户成绩",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "仅学生"
+    },
+    {
+      "name": "家长-子女列表",
+      "path": "/api/parent/children",
+      "allowed": [
+        "PARENT"
+      ],
+      "row": [
+        "家长-子女列表",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "仅家长"
+    },
+    {
+      "name": "家长-绑定子女详情",
+      "path": "/api/parent/children/1",
+      "allowed": [
+        "PARENT"
+      ],
+      "row": [
+        "家长-绑定子女详情",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "仅家长+绑定"
+    },
+    {
+      "name": "家长-非绑定子女",
+      "path": "/api/parent/children/2",
+      "allowed": [],
+      "row": [
+        "家长-非绑定子女",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "家长访问非绑定子女应被拒"
+    },
+    {
+      "name": "家长-AI报告(绑定)",
+      "path": "/api/parent/ai-report?studentId=1",
+      "allowed": [
+        "PARENT"
+      ],
+      "row": [
+        "家长-AI报告(绑定)",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "仅家长+VIP"
+    },
+    {
+      "name": "学生列表",
+      "path": "/api/student/page?page=1&size=5",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "学生列表",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "教师系"
+    },
+    {
+      "name": "学生明细(id=2)",
+      "path": "/api/student/2",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "学生明细(id=2)",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "学生不可看他人"
+    },
+    {
+      "name": "学情画像(学生1)",
+      "path": "/api/profile/student?studentId=1",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "学情画像(学生1)",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "教师系"
+    },
+    {
+      "name": "干预工单列表",
+      "path": "/api/intervention/tickets",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "干预工单列表",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "教师系"
+    },
+    {
+      "name": "学情总览",
+      "path": "/api/dashboard/overview",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "学情总览",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "教师系"
+    },
+    {
+      "name": "预警列表",
+      "path": "/api/warning/page?current=1&size=5",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "预警列表",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "教师系"
+    },
+    {
+      "name": "预警时间线(学生1)",
+      "path": "/api/warning/timeline?studentId=1",
+      "allowed": [
+        "ADMIN",
+        "TEACHER"
+      ],
+      "row": [
+        "预警时间线(学生1)",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "note": "数据范围校验"
+    }
+  ],
+  "issues": []
+}
