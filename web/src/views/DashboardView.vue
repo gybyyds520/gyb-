@@ -1,5 +1,8 @@
 <template>
   <div class="page-container">
+    <!-- 个人中心卡片（移动端专属，通用组件）：头像 + 身份 + 全校学情速览 -->
+    <MobileProfileCard :stats="profileStats" />
+
     <el-row :gutter="16">
       <el-col v-for="card in statCards" :key="card.title" :xs="12" :sm="12" :md="6">
         <el-card class="stat-card" shadow="hover">
@@ -93,6 +96,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import { User, TrendCharts, Warning, MagicStick } from '@element-plus/icons-vue'
 import { overview, latestWarnings } from '@/api/dashboard'
+import MobileProfileCard from '@/components/MobileProfileCard.vue'
 
 const LEVEL_TEXT = { 1: '蓝色', 2: '黄色', 3: '橙色', 4: '红色' }
 const LEVEL_TYPE = { 1: 'info', 2: 'warning', 3: 'warning', 4: 'danger' }
@@ -113,6 +117,14 @@ const statCards = computed(() => [
   { title: '预测覆盖', value: data.value.predictionCount ?? 0, icon: TrendCharts, color: '#67c23a' },
   { title: '当前预警', value: data.value.activeWarningCount ?? 0, icon: Warning, color: '#e6a23c' },
   { title: 'AI 报告', value: data.value.reportCount ?? 0, icon: MagicStick, color: '#909399' }
+])
+
+/** 个人中心卡片：全校学情速览（与上方统计卡同一数据源） */
+const profileStats = computed(() => [
+  { label: '在校学生', value: data.value.studentCount ?? 0 },
+  { label: '当前预警', value: data.value.activeWarningCount ?? 0 },
+  { label: '预测覆盖', value: data.value.predictionCount ?? 0 },
+  { label: 'AI 报告', value: data.value.reportCount ?? 0 }
 ])
 
 const clazzRanking = computed(() => data.value.clazzRanking || [])

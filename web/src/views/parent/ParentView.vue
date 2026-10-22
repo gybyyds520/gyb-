@@ -1,5 +1,8 @@
 <template>
   <div class="page-container">
+    <!-- 个人中心卡片（移动端专属，通用组件）：头像 + 身份 + 子女学情速览 -->
+    <MobileProfileCard :stats="profileStats" sub="家长端 · 绑定子女学情" />
+
     <el-alert :closable="false" type="info" show-icon style="margin-bottom: 16px">
       <template #title>
         本页仅展示您已绑定子女的学业概况。其他学生信息、班级排名与学校内部处置流程不向家长开放；
@@ -204,17 +207,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { myChildren, childDetail, parentFeedback } from '@/api/portal'
 import { parentHomework } from '@/api/homework'
 import { childAiReport } from '@/api/vip'
 import { listBase } from '@/api/base'
+import MobileProfileCard from '@/components/MobileProfileCard.vue'
 
 const router = useRouter()
 
 const children = ref([])
+
+/** 个人中心卡片：子女学情速览（绑定子女数 + 预警/风险汇总） */
+const profileStats = computed(() => {
+  const riskCount = children.value.filter((c) => c.riskFlag === 'RISK').length
+  const warnCount = children.value.reduce((s, c) => s + (Number(c.activeWarningCount) || 0), 0)
+  return [
+    { label: '绑定子女', value: children.value.length },
+    { label: '进行中预警', value: warnCount },
+    { label: '风险关注', value: riskCount },
+    { label: '子女成绩', value: children.value.length ? '已同步' : '-' }
+  ]
+})
 const detail = ref(null)
 const terms = ref([])
 const termId = ref(null)
