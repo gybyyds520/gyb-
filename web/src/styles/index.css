@@ -1,7 +1,23 @@
 :root {
-  --xqfx-primary: #2f6fed;
-  --xqfx-bg: #f5f7fa;
-  --xqfx-sidebar-bg: #1f2b48;
+  /* ===== 主色板（整合改版：清新青蓝渐变） ===== */
+  --xqfx-primary: #4f7cff;
+  --xqfx-primary-light: #6b93ff;
+  --xqfx-accent: #7c5cff;
+  --xqfx-bg: #f4f7fd;
+  --xqfx-sidebar-bg: linear-gradient(180deg, #16204b 0%, #1d2c66 100%);
+  --xqfx-card-shadow: 0 2px 12px rgba(31, 45, 105, 0.06), 0 1px 3px rgba(31, 45, 105, 0.04);
+  --xqfx-radius: 12px;
+
+  /* Element Plus 主色覆盖（全局跟随） */
+  --el-color-primary: #4f7cff;
+  --el-color-primary-light-3: #7c9dff;
+  --el-color-primary-light-5: #9db8ff;
+  --el-color-primary-light-7: #bed2ff;
+  --el-color-primary-light-8: #d4e1ff;
+  --el-color-primary-light-9: #ecf2ff;
+  --el-color-primary-dark-2: #3f63cc;
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
 }
 
 * {
@@ -22,12 +38,28 @@ body {
   color: #303133;
 }
 
+/* ===== 通用卡片/页面容器（简约统一） ===== */
 .page-container {
   padding: 16px;
 }
 
+.el-card {
+  border-radius: var(--xqfx-radius);
+  border: 1px solid rgba(31, 45, 105, 0.08);
+  box-shadow: var(--xqfx-card-shadow);
+}
+
 .stat-card {
-  border-radius: 8px;
+  border-radius: var(--xqfx-radius);
+}
+
+/* 顶部操作区通用样式 */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .mobile-only {
@@ -37,7 +69,8 @@ body {
 /* 移动端响应式：≤768px */
 @media (max-width: 768px) {
   .page-container {
-    padding: 8px;
+    padding: 10px;
+    padding-bottom: 70px; /* 给底部 TabBar 留空间 */
   }
 
   .mobile-only {

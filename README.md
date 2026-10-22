@@ -37,6 +37,7 @@ gybxx/
 
 - **后端**：Spring Boot 3.2.5 / MyBatis-Plus / Spring Security + JWT / MySQL 8 / Redis / WebSocket
 - **前端**：Vue 3 / Vite / Element Plus / ECharts / Pinia / Vue Router
+- **多端界面**：三端差异化布局、功能互通（同一套路由/API）——Web 端经典侧边导航、桌面端（Electron）紧凑客户端风格、移动端底部 TabBar + 抽屉（≤768px 自动切换）
 - **预测**：Python scikit-learn（LR / RF / XGBoost）→ FastAPI 推理微服务，Java 侧 HTTP 调用
 - **大模型**：Ollama 本地部署（llama3.2 主 / qwen2.5 备），SSE 流式，支持降级
 

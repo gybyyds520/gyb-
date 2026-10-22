@@ -1,12 +1,18 @@
 <template>
   <div class="login-page">
-    <el-card class="login-card" shadow="always">
-      <template #header>
-        <div class="login-header">
-          <h2>高校学情预测分析系统</h2>
-          <p>基于 Ollama 本地大模型 · 学业预测与预警</p>
+    <!-- 背景装饰光斑 -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+
+    <div class="login-card glass-card">
+      <div class="brand">
+        <div class="brand-logo">学</div>
+        <div>
+          <h1 class="brand-title">高校学情预测分析系统</h1>
+          <p class="brand-sub">基于 Ollama 本地大模型 · 学业预测与预警</p>
         </div>
-      </template>
+      </div>
 
       <el-radio-group v-model="form.loginType" class="entry-group" size="large">
         <el-radio-button value="TEACHER">教师端</el-radio-button>
@@ -14,14 +20,12 @@
         <el-radio-button value="PARENT">家长端</el-radio-button>
       </el-radio-group>
 
-      <el-alert :closable="false" type="info" class="entry-desc">
-        <template #title>
-          <span class="desc-title">{{ entry.title }}可使用的功能</span>
-          <ul class="desc-list">
-            <li v-for="(f, i) in entry.functions" :key="i">{{ f }}</li>
-          </ul>
-        </template>
-      </el-alert>
+      <div class="entry-desc">
+        <div class="desc-title">{{ entry.title }}可使用的功能</div>
+        <ul class="desc-list">
+          <li v-for="(f, i) in entry.functions" :key="i">{{ f }}</li>
+        </ul>
+      </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" size="large" @keyup.enter="handleLogin">
         <el-form-item prop="username">
@@ -53,7 +57,9 @@
         :closable="false"
         :description="entry.demoTip"
       />
-    </el-card>
+    </div>
+
+    <div class="platform-tip">Web · 桌面端 · 移动端 三端功能互通</div>
   </div>
 </template>
 
@@ -107,7 +113,6 @@ const userStore = useUserStore()
 
 const formRef = ref()
 const loading = ref(false)
-// 从注册页跳转时可预选登录端（type=STUDENT / PARENT）
 const initialType = ['STUDENT', 'PARENT'].includes(route.query.type) ? route.query.type : 'TEACHER'
 const form = reactive({ username: 'admin', password: 'admin123', loginType: initialType })
 const rules = {
@@ -140,37 +145,80 @@ async function handleLogin() {
 
 <style scoped>
 .login-page {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #2f6fed 0%, #1f2b48 100%);
+  overflow: hidden;
+  background: linear-gradient(135deg, #2f4bd0 0%, #4f7cff 45%, #7c5cff 100%);
 }
 
-.login-card {
-  width: 420px;
-  border-radius: 12px;
+/* 背景光斑 */
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+.blob-1 { width: 420px; height: 420px; background: #7c5cff; top: -120px; left: -80px; }
+.blob-2 { width: 380px; height: 380px; background: #00c2ff; bottom: -100px; right: -60px; }
+.blob-3 { width: 260px; height: 260px; background: #ff9d6b; top: 40%; right: 18%; opacity: 0.25; }
+
+/* 玻璃拟态卡片 */
+.glass-card {
+  position: relative;
+  z-index: 1;
+  width: 430px;
+  padding: 34px 34px 26px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(20, 40, 120, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-.login-header {
-  text-align: center;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
 }
 
-.login-header h2 {
-  margin: 0 0 6px;
-  font-size: 20px;
+.brand-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #4f7cff, #7c5cff);
+  box-shadow: 0 8px 20px rgba(79, 124, 255, 0.35);
+  flex-shrink: 0;
 }
 
-.login-header p {
+.brand-title {
   margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: #1f2a44;
+}
+
+.brand-sub {
+  margin: 4px 0 0;
   font-size: 12px;
-  color: #909399;
+  color: #8a94a6;
 }
 
 .entry-group {
   display: flex;
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .entry-group :deep(.el-radio-button) {
@@ -182,23 +230,39 @@ async function handleLogin() {
 }
 
 .entry-desc {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #f3f7ff;
+  border: 1px solid #dfe9ff;
 }
 
 .desc-title {
   font-size: 12px;
+  font-weight: 600;
+  color: #4f7cff;
 }
 
 .desc-list {
   margin: 6px 0 0;
   padding-left: 18px;
   font-size: 12px;
-  line-height: 1.7;
-  color: #606266;
+  line-height: 1.8;
+  color: #5b6472;
 }
 
 .login-btn {
   width: 100%;
+  height: 44px;
+  font-size: 15px;
+  letter-spacing: 4px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #4f7cff, #7c5cff);
+  border: none;
+}
+
+.login-btn:hover {
+  background: linear-gradient(90deg, #3f6cf0, #6b4cf0);
 }
 
 .register-entry {
@@ -212,9 +276,20 @@ async function handleLogin() {
   margin-top: 14px;
 }
 
+.platform-tip {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 1px;
+}
+
 @media (max-width: 768px) {
   .login-card {
     width: 92%;
+    max-width: 420px;
+    padding: 26px 22px 20px;
   }
 }
 </style>
