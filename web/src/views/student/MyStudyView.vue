@@ -1,5 +1,36 @@
 <template>
   <div class="page-container">
+    <!-- 个人中心卡片（移动端专属）：头像 + 身份 + 学情速览 -->
+    <div v-if="overview" class="profile-card mobile-only">
+      <div class="pc-blob pc-blob-1"></div>
+      <div class="pc-blob pc-blob-2"></div>
+      <div class="pc-top">
+        <div class="pc-avatar">{{ avatarChar }}</div>
+        <div class="pc-id">
+          <div class="pc-name">{{ displayName }}<span class="pc-role">{{ roleText }}</span></div>
+          <div class="pc-no">{{ overview.studentNo || '学号未绑定' }}</div>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat">
+          <div class="pc-stat-v">{{ overview.indicator?.gpa ?? '-' }}</div>
+          <div class="pc-stat-l">GPA</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-v">{{ overview.scoreCount ?? 0 }}</div>
+          <div class="pc-stat-l">成绩记录</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-v">{{ overview.activeWarningCount ?? 0 }}</div>
+          <div class="pc-stat-l">进行中预警</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-v">{{ overview.indicator?.earnedCredit ?? 0 }}</div>
+          <div class="pc-stat-l">已获学分</div>
+        </div>
+      </div>
+    </div>
+
     <el-alert :closable="false" type="info" show-icon style="margin-bottom: 16px">
       <template #title>
         本页仅展示你本人的学业数据。同学之间的成绩与排名互不公开，如需了解班级整体情况请联系辅导员。
@@ -344,8 +375,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
+import { useUserStore } from '@/stores/user'
 import { myOverview, myScores } from '@/api/portal'
 import { myPractices, practiceDetail } from '@/api/exam'
 import { myScoreTrend } from '@/api/vip'
@@ -358,6 +390,15 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const overview = ref(null)
+
+/** 个人中心卡片：身份信息与角色文案 */
+const userStore = useUserStore()
+const displayName = computed(() => overview.value?.studentName || userStore.realName || '同学')
+const roleText = computed(() => ({
+  STUDENT: '学生', PARENT: '家长', TEACHER: '教师', COUNSELOR: '辅导员',
+  ADMIN: '管理员', SCHOOL_ADMIN: '校级管理员', COLLEGE_ADMIN: '院系管理员'
+}[userStore.userType] || userStore.userType || '用户'))
+const avatarChar = computed(() => (displayName.value || '学').charAt(0))
 const scores = ref([])
 const terms = ref([])
 const termId = ref(null)
@@ -668,6 +709,122 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ===== 个人中心卡片（移动端专属，与登录页青蓝渐变/玻璃拟态一致） ===== */
+.profile-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 18px 16px 14px;
+  margin-bottom: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #2f4bd0 0%, #4f7cff 45%, #7c5cff 100%);
+  box-shadow: 0 8px 24px rgba(79, 124, 255, 0.28);
+}
+
+.pc-blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pc-blob-1 {
+  width: 130px;
+  height: 130px;
+  background: rgba(0, 194, 255, 0.35);
+  top: -50px;
+  right: -30px;
+}
+
+.pc-blob-2 {
+  width: 90px;
+  height: 90px;
+  background: rgba(124, 92, 255, 0.45);
+  bottom: -30px;
+  left: 30%;
+}
+
+.pc-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pc-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #4f7cff;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(31, 45, 105, 0.18);
+  flex-shrink: 0;
+}
+
+.pc-id {
+  min-width: 0;
+}
+
+.pc-name {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-role {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.pc-no {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.pc-stats {
+  position: relative;
+  margin-top: 14px;
+  display: flex;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pc-stat {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.pc-stat + .pc-stat {
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.pc-stat-v {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pc-stat-l {
+  margin-top: 3px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
 .stat-card {
   text-align: center;
 }
