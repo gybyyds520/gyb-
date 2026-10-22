@@ -1,0 +1,13 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "学情分析系统",
+    "navigationBarBackgroundColor": "#4f7cff",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f4f7fd"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
