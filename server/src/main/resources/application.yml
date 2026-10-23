@@ -50,10 +50,10 @@ xqfx:
   # Ollama 本地大模型
   ollama:
     base-url: http://127.0.0.1:11434
-    primary-model: llama3.2:3b
-    fallback-model: qwen2.5-coder:1.5b-base
+    primary-model: deepseek-r1:7b
+    fallback-model: llama3.2:3b
     # 命题对生成质量要求更高，练习题单独用规模更大的本地模型；不可用自动回落主模型
-    practice-model: llama3.1:8b
+    practice-model: deepseek-r1:7b
     embed-model: nomic-embed-text:latest
     timeout: 120s
     stream: true
