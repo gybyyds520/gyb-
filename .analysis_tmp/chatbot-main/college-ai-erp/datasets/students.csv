@@ -1,0 +1,4 @@
+student_id,name,email,password,register_no,department,semester,year,phone,attendance,total_classes,cgpa
+1,Mahesh,mahesh@college.edu,123456,23CSE001,CSE,5,3.0,9876543210,97.0,100,8.4
+2,jothi sai,jothisai@collage.edu,67890,cs2007,ece,6,,,99.0,67,7.68
+3,Rose John,rosejohn@college.edu,123456,cs1176,csc,6,,,99.99,1,9.0

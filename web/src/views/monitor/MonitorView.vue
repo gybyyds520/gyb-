@@ -220,6 +220,64 @@
           </div>
         </div>
       </el-tab-pane>
+
+      <!-- 激励卡管理（AI 绘图 · 本地 SD） -->
+      <el-tab-pane label="激励卡管理" name="motivation">
+        <div class="panel">
+          <div class="panel-title">
+            批量生成激励卡（AI 绘图 · 本地 SD）· 单次最多 20 人
+            <el-button size="small" type="primary" :loading="motBatchLoading" @click="doBatchGenerate" style="margin-left: 12px">开始批量生成</el-button>
+            <el-button size="small" :loading="motRecordsLoading" @click="loadMotivationRecords" style="margin-left: 8px">刷新记录</el-button>
+          </div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0">
+            <el-radio-group v-model="motBatchStyle">
+              <el-radio-button label="ACADEMIC">学术蓝</el-radio-button>
+              <el-radio-button label="STAR">星空金</el-radio-button>
+              <el-radio-button label="NATURE">清新绿</el-radio-button>
+            </el-radio-group>
+            <el-input v-model="motStudentIds" placeholder="学生ID列表，逗号/换行分隔，如：14,15,16" style="width: 340px" />
+          </div>
+          <el-alert
+            v-if="motBatchResult"
+            :type="motBatchResult.failedCount ? 'warning' : 'success'"
+            :closable="false"
+            :title="`批量完成：成功 ${motBatchResult.successCount} / ${motBatchResult.total}${motBatchResult.failedCount ? '，失败 ' + motBatchResult.failedCount + '（见下表）' : ''}`"
+          />
+          <el-table v-if="motBatchResult && motBatchResult.succeeded?.length" :data="motBatchResult.succeeded" size="small" border style="margin-top: 10px">
+            <el-table-column prop="studentId" label="学生ID" width="100" />
+            <el-table-column prop="studentName" label="姓名" width="110" />
+            <el-table-column prop="imageUrl" label="图片" min-width="240" show-overflow-tooltip />
+          </el-table>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">历史激励卡（全量记录）</div>
+          <el-table :data="motRecords" size="small" border max-height="420">
+            <el-table-column prop="id" label="ID" width="60" />
+            <el-table-column prop="studentName" label="学生" width="110" />
+            <el-table-column prop="style" label="风格" width="90">
+              <template #default="{ row }">
+                {{ { ACADEMIC: '学术蓝', STAR: '星空金', NATURE: '清新绿' }[row.style] || row.style }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="prompt" label="提示词" min-width="200" show-overflow-tooltip />
+            <el-table-column label="生成时间" width="160">
+              <template #default="{ row }">{{ formatMotTime(row.createTime) }}</template>
+            </el-table-column>
+            <el-table-column label="操作" width="130">
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="previewMotivation(row)">查看</el-button>
+                <el-button link type="success" size="small" tag="a" :href="row.imageUrl" download>下载</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="!motRecords.length" description="暂无激励卡记录" :image-size="50" />
+        </div>
+
+        <el-dialog v-model="motPreviewDialog" title="激励卡预览" width="440px" destroy-on-close>
+          <img v-if="motPreviewUrl" :src="motPreviewUrl" style="width: 100%; border-radius: 8px" alt="激励卡" />
+        </el-dialog>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -229,6 +287,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { monitorOverview, monitorLatest, monitorRecords, monitorAccounts, monitorAccount, monitorDeleteAccount } from '@/api/monitor'
 import { generateWeeklyReport } from '@/api/ai'
+import { motivationRecords as motivationRecordsApi, motivationBatchGenerate } from '@/api/motivation'
 
 const overview = ref(null)
 const latest = ref(null)
@@ -236,6 +295,57 @@ const loading = ref(false)
 const autoRefresh = ref(true)
 const activeTab = ref('latest')
 const latestTab = ref('warnings')
+
+/** 激励卡管理 */
+const motBatchStyle = ref('ACADEMIC')
+const motStudentIds = ref('')
+const motBatchLoading = ref(false)
+const motBatchResult = ref(null)
+const motRecords = ref([])
+const motRecordsLoading = ref(false)
+const motPreviewDialog = ref(false)
+const motPreviewUrl = ref('')
+
+function formatMotTime(t) {
+  return t ? String(t).replace('T', ' ').slice(0, 16) : '-'
+}
+
+async function loadMotivationRecords() {
+  motRecordsLoading.value = true
+  try {
+    motRecords.value = (await motivationRecordsApi()) || []
+  } finally {
+    motRecordsLoading.value = false
+  }
+}
+
+async function doBatchGenerate() {
+  const ids = motStudentIds.value
+    .split(/[,，\n\r]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(Number)
+  if (!ids.length) {
+    ElMessage.warning('请先输入学生ID（逗号或换行分隔）')
+    return
+  }
+  motBatchLoading.value = true
+  try {
+    const res = await motivationBatchGenerate({ studentIds: ids, style: motBatchStyle.value })
+    motBatchResult.value = res
+    ElMessage.success(`批量生成完成：成功 ${res.successCount} / ${res.total}`)
+    await loadMotivationRecords()
+  } catch (e) {
+    ElMessage.error(e?.message || '批量生成失败，请确认本地 SD 图像服务已启动（8001）')
+  } finally {
+    motBatchLoading.value = false
+  }
+}
+
+function previewMotivation(row) {
+  motPreviewUrl.value = row.imageUrl
+  motPreviewDialog.value = true
+}
 
 // AI 周报
 const weeklyReport = ref('')
@@ -288,7 +398,7 @@ async function loadLatest() {
 async function loadAll() {
   loading.value = true
   try {
-    await Promise.all([loadOverview(), loadLatest()])
+    await Promise.all([loadOverview(), loadLatest(), loadMotivationRecords()])
   } finally {
     loading.value = false
   }

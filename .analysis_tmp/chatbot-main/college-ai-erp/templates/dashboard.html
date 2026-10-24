@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>College AI ERP</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+
+
+<div>
+    <h1 class="logo-title">
+        Rose AI
+    </h1>
+
+    <p class="logo-tagline">
+        Academic Management System
+    </p>
+</div>
+
+</div>
+
+</div>
+    </h2>
+
+   <div class="nav-links">
+
+    <a href="/dashboard" class="nav-btn">
+
+        📊 Dashboard
+
+        
+    </a>
+
+
+
+    <a href="/prediction" class="nav-btn">
+        🤖 AI Center
+    </a>
+
+    <a href="/download-report" class="nav-btn">
+        📄 Reports
+    </a>
+
+    <a href="/" class="nav-btn logout-btn">
+        🚪 Logout
+    </a>
+    
+    
+   <button
+    class="nav-btn"
+    onclick="toggleTheme()"
+>
+    🌙 / ☀️
+</button>
+
+</div>
+
+</div>
+
+<div class="main-content">
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>Student Profile</h2>
+
+        <p><b>Name:</b> {{ student['name'] }}</p>
+
+        <p><b>Register No:</b> {{ student['register_no'] }}</p>
+
+        <p><b>Department:</b> {{ student['department'] }}</p>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Quick Actions</h2>
+
+        <a href="/prediction">
+            <button>🤖 AI Performance Center</button>
+        </a>
+
+        <a href="/download-report">
+            <button>📄 Download PDF Report</button>
+        </a>
+
+    </div>
+
+    <div class="grid">
+
+       <div class="card stat-card neon-card">
+    <div class="stat-icon">📈</div>
+    <h2>{{ student['attendance'] }}%</h2>
+    <p>Attendance</p>
+</div>
+
+        <div class="card stat-card neon-card">
+    <div class="stat-icon">📈</div>
+    <h2>{{ student['cgpa'] }}</h2> 
+    <p>CGPA</p> 
+
+</div>
+
+        <div class="card stat-card neon-card">
+    <div class="stat-icon">📈</div>
+    <h2>{{ student['semester'] }}</h2> 
+    <p>SEMESTER</p> 
+</div>
+
+        <div class="card stat-card neon-card">
+    <div class="stat-icon">📈</div>
+    <h2>{{ student['total_classes'] }}</h2> 
+    <p>TOTAL CLASSES</p> 
+</div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Marks</h2>
+
+        <table border="1" width="100%" cellpadding="10">
+
+            <tr>
+                <th>Subject</th>
+                <th>Internal</th>
+                <th>Assignment</th>
+                <th>Semester</th>
+                <th>Total</th>
+                <th>Grade</th>
+            </tr>
+
+            {% for mark in marks %}
+
+            <tr>
+                <td>{{ mark['subject'] }}</td>
+                <td>{{ mark['internal_marks'] }}</td>
+                <td>{{ mark['assignment_marks'] }}</td>
+                <td>{{ mark['semester_marks'] }}</td>
+                <td>{{ mark['total'] }}</td>
+                <td>{{ mark['grade'] }}</td>
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Upcoming Exams</h2>
+
+        <table border="1" width="100%" cellpadding="10">
+
+            <tr>
+                <th>Exam Name</th>
+                <th>Date</th>
+                <th>Hall</th>
+            </tr>
+
+            {% for exam in exams %}
+
+            <tr>
+                <td>{{ exam['exam_name'] }}</td>
+                <td>{{ exam['date'] }}</td>
+                <td>{{ exam['hall'] }}</td>
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Notifications</h2>
+
+        {% for note in notifications %}
+
+        <div class="notification">
+
+            <h3>{{ note['title'] }}</h3>
+
+            <p>{{ note['message'] }}</p>
+
+            <small>{{ note['date'] }}</small>
+
+            <hr>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+<script>
+
+function toggleStudentForm(){
+
+    let form =
+        document.getElementById(
+            "student-form"
+        );
+
+    if(form.style.display === "none"){
+
+        form.style.display = "block";
+
+    }else{
+
+        form.style.display = "none";
+    }
+}
+
+</script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+
+
+<script>
+
+function toggleStudentForm(){
+
+    let form =
+        document.getElementById(
+            "student-form"
+        );
+
+    if(form.style.display === "none"){
+
+        form.style.display = "block";
+
+    }else{
+
+        form.style.display = "none";
+    }
+}
+
+</script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+
+<button id="chat-btn">
+    🤖
+</button>
+<div id="chat-popup">
+
+    <div id="chat-header">
+        AI Academic Assistant
+        <span onclick="closeChat()">✖</span>
+    </div>
+
+    <div id="chat-box"></div>
+
+    <input
+        type="text"
+        id="message"
+        placeholder="Ask anything..."
+    >
+
+    <button onclick="sendMessage()">
+    Send
+</button>
+
+<button onclick="startVoice()">
+    🎤 Speak
+</button>
+
+<button onclick="stopVoice()">
+    ⏹ Stop AI
+</button>
+
+<button onclick="clearChat()">
+    🗑 Clear Chat
+</button>
+
+</div>
+<script>
+
+const btn =
+document.getElementById("chat-btn");
+
+const popup =
+document.getElementById("chat-popup");
+
+btn.onclick = function() {
+
+    popup.style.display = "block";
+};
+
+function closeChat() {
+
+    popup.style.display = "none";
+}
+
+</script>
+<script>
+
+async function sendMessage(){
+
+    let message =
+        document.getElementById("message").value;
+
+    if(message.trim() === ""){
+        return;
+    }
+
+    let response =
+        await fetch(
+            "/chat",
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    message:message
+                })
+            }
+        );
+
+    let data =
+        await response.json();
+
+    document.getElementById("chat-box").innerHTML +=
+        "<p><b>You:</b> " + message + "</p>";
+
+    document.getElementById("chat-box").innerHTML +=
+        "<p><b>AI:</b> " + data.reply + "</p>";
+
+    document.getElementById("message").value = "";
+
+    let speech =
+        new SpeechSynthesisUtterance(
+            data.reply
+        );
+
+    speech.lang = "en-US";
+
+    speechSynthesis.speak(
+        speech
+    );
+}
+function startVoice(){
+
+    const recognition =
+        new webkitSpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.start();
+
+    recognition.onresult = function(event){
+
+        let speechText =
+            event.results[0][0].transcript;
+
+        document.getElementById(
+            "message"
+        ).value = speechText;
+
+        sendMessage();
+    };
+}
+
+function stopVoice(){
+
+    speechSynthesis.cancel();
+}
+
+function clearChat(){
+
+    document.getElementById(
+        "chat-box"
+    ).innerHTML = "";
+}
+document
+.getElementById("message")
+.addEventListener(
+    "keypress",
+    function(e){
+
+        if(e.key === "Enter"){
+
+            sendMessage();
+        }
+    }
+);
+
+</script>
+</body>
+</html>

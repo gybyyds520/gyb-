@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Analytics Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+    <div class="navbar">
+
+    Analytics Dashboard |
+
+    <a href="/" style="color:white;">Dashboard</a> |
+
+    <a href="/analytics" style="color:white;">Analytics</a> |
+
+    <a href="/prediction" style="color:white;">AI Performance Center</a>
+
+    <a href="/dashboard" style="color:white;">
+Dashboard
+<button
+    class="nav-btn"
+    onclick="toggleTheme()"
+>
+    🌙 / ☀️
+</button>
+</a>
+
+</div>
+
+    <div class="container">
+
+        <!-- Statistics Cards -->
+
+        <div class="grid">
+
+            <div class="card stat-card">
+
+                <div class="stat-number">
+                    {{ total_students }}
+                </div>
+
+                <div class="stat-label">
+                    Total Students
+                </div>
+
+            </div>
+
+            <div class="card stat-card">
+
+                <div class="stat-number">
+                    {{ avg_attendance }}%
+                </div>
+
+                <div class="stat-label">
+                    Average Attendance
+                </div>
+
+            </div>
+
+            <div class="card stat-card">
+
+                <div class="stat-number">
+                    {{ avg_cgpa }}
+                </div>
+
+                <div class="stat-label">
+                    Average CGPA
+                </div>
+
+            </div>
+
+            <div class="card stat-card">
+
+                <div class="stat-number">
+                    {{ total_subjects }}
+                </div>
+
+                <div class="stat-label">
+                    Subjects
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Chart Section -->
+
+        <div class="card">
+
+            <h2>Subject Performance</h2>
+
+            <img
+                src="{{ url_for('static', filename='charts/marks_chart.png') }}"
+                alt="Marks Chart"
+                width="700"
+            >
+
+        </div>
+
+    </div>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+</body>
+</html>

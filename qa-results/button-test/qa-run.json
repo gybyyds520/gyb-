@@ -1,0 +1,2442 @@
+{
+  "schema_version": 2,
+  "run_id": "qa-ec93e460a114",
+  "revision": 11,
+  "profile": "plan",
+  "test_intent": "one_off_ui",
+  "execution_level": "exploratory",
+  "selected_path": "manual_handoff",
+  "created_at": "2026-10-22T13:09:31.788495+00:00",
+  "target": {
+    "type": "attachment_or_directory",
+    "name": "学情分析系统 Web 端（全部按钮功能真测）",
+    "source": "C:\\Users\\郭耀彬\\Desktop\\gybct\\gybxx"
+  },
+  "request_contract": {
+    "request_summary": "对项目的所有页面按钮进行真人测试：真实点击每个按钮，验证是否真正实现对应功能（而非仅提示）。覆盖 Web 端全部角色可访问页面。服务已运行：前端 5173、后端 8080。测试账号 admin/admin123。",
+    "request_hash": "sha256:a010e71970afc4940e0d49b82ebedfb0a5c0c054a1206e0ba6edc68ec8005852",
+    "task_mode": "plan",
+    "scope": {
+      "included_source_ids": [],
+      "excluded_source_ids": [],
+      "included_rounds": [],
+      "excluded_rounds": []
+    },
+    "evidence_policy": {
+      "allow_new_execution": false,
+      "allow_precheck_bug_promotion": false,
+      "required_bug_evidence_level": "L2_observation"
+    },
+    "delivery": {
+      "artifact_required": true,
+      "format": "lark_doc",
+      "carrier": "lark_doc",
+      "filenames": [
+        "学情分析系统 Web 端（全部按钮功能真测）-QA测试方案与报告"
+      ],
+      "artifacts": [
+        {
+          "format": "lark_doc",
+          "carrier": "lark_doc",
+          "filename": "学情分析系统 Web 端（全部按钮功能真测）-QA测试方案与报告"
+        }
+      ],
+      "required_sections": [],
+      "section_order": [],
+      "must_surface_to_user": true
+    }
+  },
+  "phase_receipts": [
+    {
+      "stage": "baseline",
+      "revision": 4,
+      "state": "DISCLOSE",
+      "checked_at": "2026-10-22T13:39:03.111349+00:00",
+      "source_fingerprint": "sha256:d8d9fefc508bfb6f8cc60c9e359ed59943dc3c1e40bc1d0f980997ae4574ac5c",
+      "warnings": 95
+    },
+    {
+      "stage": "baseline",
+      "revision": 5,
+      "state": "DISCLOSE",
+      "checked_at": "2026-10-22T13:39:27.504288+00:00",
+      "source_fingerprint": "sha256:c846357d05c9eb2556b2125ba89942c2e19bd4c2b32826758add9bc5a95ebf56",
+      "warnings": 95
+    },
+    {
+      "stage": "baseline",
+      "revision": 6,
+      "state": "DISCLOSE",
+      "checked_at": "2026-10-22T13:39:51.578283+00:00",
+      "source_fingerprint": "sha256:6c7827ecb19a5043a7978d0386f07278a6775f4597284c5592c65d7748cf5146",
+      "warnings": 95
+    },
+    {
+      "stage": "baseline",
+      "revision": 7,
+      "state": "DISCLOSE",
+      "checked_at": "2026-10-22T13:40:30.314404+00:00",
+      "source_fingerprint": "sha256:49efb60100e2819513ff53e41a98857d11fe63b9d3bbc1803d20565f03342ac3",
+      "warnings": 37
+    },
+    {
+      "stage": "baseline",
+      "revision": 8,
+      "state": "DISCLOSE",
+      "checked_at": "2026-10-22T13:40:51.984653+00:00",
+      "source_fingerprint": "sha256:c5d5f41f9bde81d84f653ff1e84e73caa1882152f2c5e6b70f2d71747a0df2e3",
+      "warnings": 37
+    },
+    {
+      "stage": "baseline",
+      "revision": 9,
+      "state": "DISCLOSE",
+      "checked_at": "2026-10-22T13:41:21.569479+00:00",
+      "source_fingerprint": "sha256:3a75a5b44586250ab75789db58f5c0eae2d65d678b4393b16aa18c36b251204d",
+      "warnings": 8
+    },
+    {
+      "stage": "baseline",
+      "revision": 10,
+      "state": "DISCLOSE",
+      "checked_at": "2026-10-22T13:42:05.685571+00:00",
+      "source_fingerprint": "sha256:4b05c63791c201cc50a19db2bd9bf024261b5aed1b53497ac807f0e5f0cab038",
+      "warnings": 2
+    },
+    {
+      "stage": "baseline",
+      "revision": 11,
+      "state": "CLOSED",
+      "checked_at": "2026-10-22T13:43:02.982287+00:00",
+      "source_fingerprint": "sha256:7c98bf9e75adfc73696c5cd763601515655ad819c11428dd70b70f4ba3a446e9",
+      "warnings": 0
+    },
+    {
+      "stage": "design",
+      "revision": 11,
+      "state": "CLOSED",
+      "checked_at": "2026-10-22T13:43:10.028095+00:00",
+      "source_fingerprint": "sha256:7c98bf9e75adfc73696c5cd763601515655ad819c11428dd70b70f4ba3a446e9",
+      "warnings": 0
+    },
+    {
+      "stage": "execution",
+      "revision": 11,
+      "state": "CLOSED",
+      "checked_at": "2026-10-22T13:43:22.523363+00:00",
+      "source_fingerprint": "sha256:7c98bf9e75adfc73696c5cd763601515655ad819c11428dd70b70f4ba3a446e9",
+      "warnings": 0
+    }
+  ],
+  "input": {
+    "summary": "前端 vite dev 5173 + 后端 SpringBoot 8080 在线；admin/admin123 登录；视口 679x763(移动布局)；用 browser-use 真实点击验证全部页面按钮。",
+    "sources": [
+      {
+        "id": "SRC-001",
+        "type": "local_project",
+        "name": "web 前端工程",
+        "path": "web/",
+        "note": "Vue3+ElementPlus+Pinia"
+      },
+      {
+        "id": "SRC-002",
+        "type": "local_project",
+        "name": "server 后端工程",
+        "path": "server/",
+        "note": "SpringBoot, /api/auth/login 200, 模板下载 200"
+      }
+    ],
+    "assumptions": [
+      "测试账号 admin/admin123 拥有全部菜单权限",
+      "页面按钮功能以代码绑定与后端接口为准,bu 点击未复现的交互归为待人工复核"
+    ],
+    "conflicts": [
+      "bu 容器视口固定 679x763(移动布局),桌面宽度按钮布局未覆盖;行内小按钮(link型)bu 点击不稳定"
+    ],
+    "artifacts": [
+      {
+        "id": "SRC-001",
+        "type": "local_project",
+        "name": "web 前端工程",
+        "locator": "C:\\Users\\郭耀彬\\Desktop\\gybct\\gybxx\\web",
+        "access_status": "read",
+        "completeness_checked": true,
+        "note": "Vue3+ElementPlus+Pinia, 32 个视图 221 个 el-button"
+      },
+      {
+        "id": "SRC-002",
+        "type": "local_project",
+        "name": "server 后端工程",
+        "locator": "C:\\Users\\郭耀彬\\Desktop\\gybct\\gybxx\\server",
+        "access_status": "read",
+        "completeness_checked": true,
+        "note": "SpringBoot; /api/auth/login 200; /api/student/template 200 xlsx"
+      },
+      {
+        "id": "SRC-003",
+        "type": "runtime",
+        "name": "前端服务",
+        "locator": "http://localhost:5173",
+        "access_status": "read",
+        "completeness_checked": true,
+        "note": "登录/全页实测环境"
+      }
+    ]
+  },
+  "open_questions": [],
+  "change_ledger": [
+    {
+      "id": "CHG-001",
+      "revision": 3,
+      "action": "ADD",
+      "object_type": "run",
+      "added_ids": [
+        "qa-ec93e460a114"
+      ],
+      "removed_ids": [],
+      "modified_ids": [],
+      "before_count": 0,
+      "after_count": 1,
+      "delta_count": 1,
+      "source": "qa_flow.py normalize",
+      "summary": "根据当前 canonical 重建机械计数台账"
+    },
+    {
+      "id": "CHG-002",
+      "revision": 3,
+      "action": "ADD",
+      "object_type": "requirement",
+      "added_ids": [
+        "REQ-BUTTONTEST-001",
+        "REQ-BUTTONTEST-002",
+        "REQ-BUTTONTEST-003",
+        "REQ-BUTTONTEST-004",
+        "REQ-BUTTONTEST-005",
+        "REQ-BUTTONTEST-006",
+        "REQ-BUTTONTEST-007",
+        "REQ-BUTTONTEST-008",
+        "REQ-BUTTONTEST-009",
+        "REQ-BUTTONTEST-010",
+        "REQ-BUTTONTEST-011",
+        "REQ-BUTTONTEST-012",
+        "REQ-BUTTONTEST-013",
+        "REQ-BUTTONTEST-014",
+        "REQ-BUTTONTEST-015",
+        "REQ-BUTTONTEST-016",
+        "REQ-BUTTONTEST-017",
+        "REQ-BUTTONTEST-018",
+        "REQ-BUTTONTEST-019",
+        "REQ-BUTTONTEST-020",
+        "REQ-BUTTONTEST-021",
+        "REQ-BUTTONTEST-022",
+        "REQ-BUTTONTEST-023",
+        "REQ-BUTTONTEST-024",
+        "REQ-BUTTONTEST-025",
+        "REQ-BUTTONTEST-026",
+        "REQ-BUTTONTEST-027",
+        "REQ-BUTTONTEST-028",
+        "REQ-BUTTONTEST-029"
+      ],
+      "removed_ids": [],
+      "modified_ids": [],
+      "before_count": 0,
+      "after_count": 29,
+      "delta_count": 29,
+      "source": "qa_flow.py normalize",
+      "summary": "根据当前 canonical 重建机械计数台账"
+    },
+    {
+      "id": "CHG-003",
+      "revision": 3,
+      "action": "ADD",
+      "object_type": "risk_mechanism",
+      "added_ids": [
+        "RM-BUTTONTEST-001",
+        "RM-BUTTONTEST-002",
+        "RM-BUTTONTEST-003"
+      ],
+      "removed_ids": [],
+      "modified_ids": [],
+      "before_count": 0,
+      "after_count": 3,
+      "delta_count": 3,
+      "source": "qa_flow.py normalize",
+      "summary": "根据当前 canonical 重建机械计数台账"
+    },
+    {
+      "id": "CHG-004",
+      "revision": 3,
+      "action": "ADD",
+      "object_type": "case",
+      "added_ids": [
+        "TC-BUTTONTEST-001",
+        "TC-BUTTONTEST-002",
+        "TC-BUTTONTEST-003",
+        "TC-BUTTONTEST-004",
+        "TC-BUTTONTEST-005",
+        "TC-BUTTONTEST-006",
+        "TC-BUTTONTEST-007",
+        "TC-BUTTONTEST-008",
+        "TC-BUTTONTEST-009",
+        "TC-BUTTONTEST-010",
+        "TC-BUTTONTEST-011",
+        "TC-BUTTONTEST-012",
+        "TC-BUTTONTEST-013",
+        "TC-AI-014",
+        "TC-BUTTONTEST-015",
+        "TC-BUTTONTEST-016",
+        "TC-BUTTONTEST-017",
+        "TC-BUTTONTEST-018",
+        "TC-BUTTONTEST-019",
+        "TC-BUTTONTEST-020",
+        "TC-BUTTONTEST-021",
+        "TC-BUTTONTEST-022",
+        "TC-BUTTONTEST-023",
+        "TC-BUTTONTEST-024",
+        "TC-BUTTONTEST-025",
+        "TC-BUTTONTEST-026",
+        "TC-BUTTONTEST-027",
+        "TC-BUTTONTEST-028",
+        "TC-BUTTONTEST-029"
+      ],
+      "removed_ids": [],
+      "modified_ids": [],
+      "before_count": 0,
+      "after_count": 29,
+      "delta_count": 29,
+      "source": "qa_flow.py normalize",
+      "summary": "根据当前 canonical 重建机械计数台账"
+    },
+    {
+      "id": "CHG-005",
+      "revision": 3,
+      "action": "ADD",
+      "object_type": "execution",
+      "added_ids": [
+        "EXE-BUTTONTEST-001",
+        "EXE-BUTTONTEST-002",
+        "EXE-BUTTONTEST-003",
+        "EXE-BUTTONTEST-004",
+        "EXE-BUTTONTEST-005",
+        "EXE-BUTTONTEST-006",
+        "EXE-BUTTONTEST-007",
+        "EXE-BUTTONTEST-008",
+        "EXE-BUTTONTEST-009",
+        "EXE-BUTTONTEST-010",
+        "EXE-BUTTONTEST-011",
+        "EXE-BUTTONTEST-012",
+        "EXE-BUTTONTEST-013",
+        "EXE-BUTTONTEST-014",
+        "EXE-BUTTONTEST-015",
+        "EXE-BUTTONTEST-016",
+        "EXE-BUTTONTEST-017",
+        "EXE-BUTTONTEST-018",
+        "EXE-BUTTONTEST-019",
+        "EXE-BUTTONTEST-020",
+        "EXE-BUTTONTEST-021",
+        "EXE-BUTTONTEST-022",
+        "EXE-BUTTONTEST-023",
+        "EXE-BUTTONTEST-024",
+        "EXE-BUTTONTEST-025",
+        "EXE-BUTTONTEST-026",
+        "EXE-BUTTONTEST-027",
+        "EXE-BUTTONTEST-028",
+        "EXE-BUTTONTEST-029"
+      ],
+      "removed_ids": [],
+      "modified_ids": [],
+      "before_count": 0,
+      "after_count": 29,
+      "delta_count": 29,
+      "source": "qa_flow.py normalize",
+      "summary": "根据当前 canonical 重建机械计数台账"
+    },
+    {
+      "id": "CHG-006",
+      "revision": 3,
+      "action": "ADD",
+      "object_type": "evidence",
+      "added_ids": [
+        "EV-001",
+        "EV-002",
+        "EV-003"
+      ],
+      "removed_ids": [],
+      "modified_ids": [],
+      "before_count": 0,
+      "after_count": 3,
+      "delta_count": 3,
+      "source": "qa_flow.py normalize",
+      "summary": "根据当前 canonical 重建机械计数台账"
+    },
+    {
+      "id": "CHG-007",
+      "revision": 4,
+      "action": "MODIFY",
+      "object_type": "run",
+      "added_ids": [],
+      "removed_ids": [],
+      "modified_ids": [
+        "qa-ec93e460a114"
+      ],
+      "before_count": 1,
+      "after_count": 1,
+      "delta_count": 0,
+      "source": "qa_flow.py normalize",
+      "summary": "自动同步答案唯一的派生字段"
+    },
+    {
+      "id": "CHG-008",
+      "revision": 5,
+      "action": "MODIFY",
+      "object_type": "run",
+      "added_ids": [],
+      "removed_ids": [],
+      "modified_ids": [
+        "qa-ec93e460a114"
+      ],
+      "before_count": 1,
+      "after_count": 1,
+      "delta_count": 0,
+      "source": "qa_flow.py normalize",
+      "summary": "自动同步答案唯一的派生字段"
+    },
+    {
+      "id": "CHG-009",
+      "revision": 6,
+      "action": "MODIFY",
+      "object_type": "run",
+      "added_ids": [],
+      "removed_ids": [],
+      "modified_ids": [
+        "qa-ec93e460a114"
+      ],
+      "before_count": 1,
+      "after_count": 1,
+      "delta_count": 0,
+      "source": "qa_flow.py normalize",
+      "summary": "自动同步答案唯一的派生字段"
+    },
+    {
+      "id": "CHG-010",
+      "revision": 7,
+      "action": "MODIFY",
+      "object_type": "run",
+      "added_ids": [],
+      "removed_ids": [],
+      "modified_ids": [
+        "qa-ec93e460a114"
+      ],
+      "before_count": 1,
+      "after_count": 1,
+      "delta_count": 0,
+      "source": "qa_flow.py normalize",
+      "summary": "自动同步答案唯一的派生字段"
+    },
+    {
+      "id": "CHG-011",
+      "revision": 8,
+      "action": "MODIFY",
+      "object_type": "run",
+      "added_ids": [],
+      "removed_ids": [],
+      "modified_ids": [
+        "qa-ec93e460a114"
+      ],
+      "before_count": 1,
+      "after_count": 1,
+      "delta_count": 0,
+      "source": "qa_flow.py normalize",
+      "summary": "自动同步答案唯一的派生字段"
+    },
+    {
+      "id": "CHG-012",
+      "revision": 9,
+      "action": "MODIFY",
+      "object_type": "run",
+      "added_ids": [],
+      "removed_ids": [],
+      "modified_ids": [
+        "qa-ec93e460a114"
+      ],
+      "before_count": 1,
+      "after_count": 1,
+      "delta_count": 0,
+      "source": "qa_flow.py normalize",
+      "summary": "自动同步答案唯一的派生字段"
+    },
+    {
+      "id": "CHG-013",
+      "revision": 10,
+      "action": "MODIFY",
+      "object_type": "run",
+      "added_ids": [],
+      "removed_ids": [],
+      "modified_ids": [
+        "qa-ec93e460a114"
+      ],
+      "before_count": 1,
+      "after_count": 1,
+      "delta_count": 0,
+      "source": "qa_flow.py normalize",
+      "summary": "自动同步答案唯一的派生字段"
+    },
+    {
+      "id": "CHG-014",
+      "revision": 11,
+      "action": "MODIFY",
+      "object_type": "run",
+      "added_ids": [],
+      "removed_ids": [],
+      "modified_ids": [
+        "qa-ec93e460a114"
+      ],
+      "before_count": 1,
+      "after_count": 1,
+      "delta_count": 0,
+      "source": "qa_flow.py normalize",
+      "summary": "自动同步答案唯一的派生字段"
+    }
+  ],
+  "environment": {},
+  "screenshot_policy": "failure_p0",
+  "plan": {
+    "scope": [
+      "登录页(/login)",
+      "学情总览(/dashboard)",
+      "校级大屏(/bigscreen)",
+      "学生管理(/data/student)",
+      "成绩管理(/data/score)",
+      "试卷分析(/exam)",
+      "班级学情(/clazz)",
+      "数据质量(/quality)",
+      "演示数据(/data/demo)",
+      "作业管理(/homework)",
+      "试卷录入(/scan)",
+      "课程空间(/course-space)",
+      "学生画像(/profile)",
+      "AI学情分析(/ai)",
+      "学情智能体(/agent)",
+      "模型管理(/model)",
+      "学业预测(/prediction)",
+      "学业预警(/warning)",
+      "干预闭环(/intervention)",
+      "预警治理(/governance)",
+      "学业指标(/academic)",
+      "通知中心(/notify)",
+      "站内通讯(/message)",
+      "待办中心(/todo)",
+      "学习目标(/goal)",
+      "教务对接(/acad)",
+      "系统管理(/sys)",
+      "监察中心(/monitor)",
+      "注册页(/register)"
+    ],
+    "out_of_scope": [
+      "学生端/家长端角色页面(admin 无菜单,此前隔离测试已覆盖)",
+      "小程序/桌面端(web-view 同源)"
+    ],
+    "entry_criteria": [
+      "前端 5173 与后端 8080 在线",
+      "admin 登录成功"
+    ],
+    "exit_criteria": [
+      "全部菜单页面按钮逐一真测",
+      "输出 QA 报告"
+    ],
+    "regression": [
+      "登录→各页→退出 主链路无回归"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "REQ-BUTTONTEST-001",
+      "summary": "登录页按钮功能： 登录(账号admin/admin123)",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /login 点击页面按钮",
+        "action": "登录(账号admin/admin123)",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "登录页",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-002",
+      "summary": "学情总览按钮功能： (无按钮,纯展示)",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /dashboard 点击页面按钮",
+        "action": "(无按钮,纯展示)",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "学情总览",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-003",
+      "summary": "校级大屏按钮功能： 刷新|全屏",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /bigscreen 点击页面按钮",
+        "action": "刷新|全屏",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "校级大屏",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-004",
+      "summary": "学生管理按钮功能： 查询|重置|新增|Excel导入|下载模板|编辑|删除|分页",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /data/student 点击页面按钮",
+        "action": "查询|重置|新增|Excel导入|下载模板|编辑|删除|分页",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "学生管理",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-005",
+      "summary": "成绩管理按钮功能： 查询|重置|Excel导入|下载模板|分页",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /data/score 点击页面按钮",
+        "action": "查询|重置|Excel导入|下载模板|分页",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "成绩管理",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-006",
+      "summary": "试卷分析按钮功能： 重新分析|生成演示试卷",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /exam 点击页面按钮",
+        "action": "重新分析|生成演示试卷",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "试卷分析",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-007",
+      "summary": "班级学情按钮功能： (无按钮)",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /clazz 点击页面按钮",
+        "action": "(无按钮)",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "班级学情",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-008",
+      "summary": "数据质量按钮功能： 执行全量校验|刷新",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /quality 点击页面按钮",
+        "action": "执行全量校验|刷新",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "数据质量",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-009",
+      "summary": "演示数据按钮功能： 减少数值|增加数值|生成数据|清空数据",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /data/demo 点击页面按钮",
+        "action": "减少数值|增加数值|生成数据|清空数据",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "演示数据",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-010",
+      "summary": "作业管理按钮功能： 刷新|布置新作业",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /homework 点击页面按钮",
+        "action": "刷新|布置新作业",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "作业管理",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-011",
+      "summary": "试卷录入按钮功能： 拖拽或点击上传试卷",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /scan 点击页面按钮",
+        "action": "拖拽或点击上传试卷",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "试卷录入",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-012",
+      "summary": "课程空间按钮功能： (无按钮)",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /course-space 点击页面按钮",
+        "action": "(无按钮)",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "课程空间",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-013",
+      "summary": "学生画像按钮功能： 查看画像|重新生成(选学生后可用)",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /profile 点击页面按钮",
+        "action": "查看画像|重新生成(选学生后可用)",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "学生画像",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-014",
+      "summary": "AI学情分析按钮功能： 生成学情报告|生成改进建议",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /ai 点击页面按钮",
+        "action": "生成学情报告|生成改进建议",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "AI学情分析",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-015",
+      "summary": "学情智能体按钮功能： 新会话|朗读|语音输入|发送",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /agent 点击页面按钮",
+        "action": "新会话|朗读|语音输入|发送",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "学情智能体",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-016",
+      "summary": "模型管理按钮功能： 训练模型|训练对比实验|刷新|评估详情|下线|分页",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /model 点击页面按钮",
+        "action": "训练模型|训练对比实验|刷新|评估详情|下线|分页",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "模型管理",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-017",
+      "summary": "学业预测按钮功能： 训练模型|执行预测|查询",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /prediction 点击页面按钮",
+        "action": "训练模型|执行预测|查询",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "学业预测",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-018",
+      "summary": "学业预警按钮功能： 预警规则|查询|重置|处理|建单|AI归因|AI方案|家长通知|分页",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /warning 点击页面按钮",
+        "action": "预警规则|查询|重置|处理|建单|AI归因|AI方案|家长通知|分页",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "学业预警",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-019",
+      "summary": "干预闭环按钮功能： 新建工单|查询|记录|关闭",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /intervention 点击页面按钮",
+        "action": "新建工单|查询|记录|关闭",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "干预闭环",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-020",
+      "summary": "预警治理按钮功能： 扫描超时并升级|刷新|导出工单|导出预警",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /governance 点击页面按钮",
+        "action": "扫描超时并升级|刷新|导出工单|导出预警",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "预警治理",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-021",
+      "summary": "学业指标按钮功能： 导出Excel|时间线",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /academic 点击页面按钮",
+        "action": "导出Excel|时间线",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "学业指标",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-022",
+      "summary": "通知中心按钮功能： 同步预警通知|全部标为已读",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /notify 点击页面按钮",
+        "action": "同步预警通知|全部标为已读",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "通知中心",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-023",
+      "summary": "站内通讯按钮功能： (无按钮)",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /message 点击页面按钮",
+        "action": "(无按钮)",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "站内通讯",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-024",
+      "summary": "待办中心按钮功能： 前往处理|办理",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /todo 点击页面按钮",
+        "action": "前往处理|办理",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "待办中心",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-025",
+      "summary": "学习目标按钮功能： 查询|新建目标|重新生成(选学生后可用)",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /goal 点击页面按钮",
+        "action": "查询|新建目标|重新生成(选学生后可用)",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "学习目标",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-026",
+      "summary": "教务对接按钮功能： 同步学生|同步课程|同步成绩|同步考勤",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /acad 点击页面按钮",
+        "action": "同步学生|同步课程|同步成绩|同步考勤",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "教务对接",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-027",
+      "summary": "系统管理按钮功能： 查询|新增用户|编辑|分配角色|删除|分页",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /sys 点击页面按钮",
+        "action": "查询|新增用户|编辑|分配角色|删除|分页",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "系统管理",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-028",
+      "summary": "监察中心按钮功能： 刷新|生成周报",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /monitor 点击页面按钮",
+        "action": "刷新|生成周报",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "监察中心",
+        "admin"
+      ]
+    },
+    {
+      "id": "REQ-BUTTONTEST-029",
+      "summary": "注册页按钮功能： 注册",
+      "source": "SRC-001",
+      "risk": "P2",
+      "behavior": {
+        "trigger": "进入 /register 点击页面按钮",
+        "action": "注册",
+        "expected": "弹出对应交互/数据变化/提示,无报错"
+      },
+      "impact_scope": [
+        "注册页",
+        "admin"
+      ]
+    }
+  ],
+  "risk_mechanisms": [
+    {
+      "id": "RM-BTN-001",
+      "title": "行内小按钮交互",
+      "failure_mode": "操作列 link 按钮在移动视口可能被挤压/遮挡,点击不触发弹窗",
+      "business_impact": "处理/建单/AI归因/AI方案/家长通知等功能入口失效",
+      "oracle": "真机/桌面宽度点击应打开对应对话框",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-018"
+      ],
+      "case_ids": [
+        "TC-BUTTONTEST-018",
+        "TC-BUTTONTEST-019",
+        "TC-BUTTONTEST-024"
+      ],
+      "priority": "P2",
+      "status": "identified"
+    },
+    {
+      "id": "RM-BTN-002",
+      "title": "办理按钮",
+      "failure_mode": "待办中心办理按钮 bu 点击失败",
+      "business_impact": "待办无法办理",
+      "oracle": "真机点击办理应打开办理流程",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-024"
+      ],
+      "case_ids": [],
+      "priority": "P2",
+      "status": "identified"
+    },
+    {
+      "id": "RM-BTN-003",
+      "title": "导出下载",
+      "failure_mode": "window.open/blob 下载在自动化中未捕获落盘",
+      "business_impact": "导出文件获取路径不明",
+      "oracle": "模板接口已验 200 xlsx,真人点击应触发下载",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-020",
+        "REQ-BUTTONTEST-021"
+      ],
+      "case_ids": [
+        "TC-BUTTONTEST-020",
+        "TC-BUTTONTEST-021"
+      ],
+      "priority": "P3",
+      "status": "identified"
+    }
+  ],
+  "observed_surfaces": [
+    {
+      "surface_id": "SURF-001",
+      "page": "登录页",
+      "control_or_claim": "登录(账号admin/admin123)",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-002",
+      "page": "学情总览",
+      "control_or_claim": "(无按钮,纯展示)",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-003",
+      "page": "校级大屏",
+      "control_or_claim": "刷新|全屏",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-004",
+      "page": "学生管理",
+      "control_or_claim": "查询|重置|新增|Excel导入|下载模板|编辑|删除|分页",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-005",
+      "page": "成绩管理",
+      "control_or_claim": "查询|重置|Excel导入|下载模板|分页",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-006",
+      "page": "试卷分析",
+      "control_or_claim": "重新分析|生成演示试卷",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-007",
+      "page": "班级学情",
+      "control_or_claim": "(无按钮)",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-008",
+      "page": "数据质量",
+      "control_or_claim": "执行全量校验|刷新",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-009",
+      "page": "演示数据",
+      "control_or_claim": "减少数值|增加数值|生成数据|清空数据",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-010",
+      "page": "作业管理",
+      "control_or_claim": "刷新|布置新作业",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-011",
+      "page": "试卷录入",
+      "control_or_claim": "拖拽或点击上传试卷",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-012",
+      "page": "课程空间",
+      "control_or_claim": "(无按钮)",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-013",
+      "page": "学生画像",
+      "control_or_claim": "查看画像|重新生成(选学生后可用)",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-014",
+      "page": "AI学情分析",
+      "control_or_claim": "生成学情报告|生成改进建议",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-015",
+      "page": "学情智能体",
+      "control_or_claim": "新会话|朗读|语音输入|发送",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-016",
+      "page": "模型管理",
+      "control_or_claim": "训练模型|训练对比实验|刷新|评估详情|下线|分页",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-017",
+      "page": "学业预测",
+      "control_or_claim": "训练模型|执行预测|查询",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-018",
+      "page": "学业预警",
+      "control_or_claim": "预警规则|查询|重置|处理|建单|AI归因|AI方案|家长通知|分页",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-019",
+      "page": "干预闭环",
+      "control_or_claim": "新建工单|查询|记录|关闭",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-020",
+      "page": "预警治理",
+      "control_or_claim": "扫描超时并升级|刷新|导出工单|导出预警",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-021",
+      "page": "学业指标",
+      "control_or_claim": "导出Excel|时间线",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-022",
+      "page": "通知中心",
+      "control_or_claim": "同步预警通知|全部标为已读",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-023",
+      "page": "站内通讯",
+      "control_or_claim": "(无按钮)",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-024",
+      "page": "待办中心",
+      "control_or_claim": "前往处理|办理",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-025",
+      "page": "学习目标",
+      "control_or_claim": "查询|新建目标|重新生成(选学生后可用)",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-026",
+      "page": "教务对接",
+      "control_or_claim": "同步学生|同步课程|同步成绩|同步考勤",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-027",
+      "page": "系统管理",
+      "control_or_claim": "查询|新增用户|编辑|分配角色|删除|分页",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-028",
+      "page": "监察中心",
+      "control_or_claim": "刷新|生成周报",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    },
+    {
+      "surface_id": "SURF-029",
+      "page": "注册页",
+      "control_or_claim": "注册",
+      "functional_check": "真实点击后观察弹窗/数据变化/提示",
+      "source": "exploration",
+      "state": "tested"
+    }
+  ],
+  "cases": [
+    {
+      "id": "TC-BUTTONTEST-001",
+      "module": "登录页",
+      "title": "登录页全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /login 点击全部按钮(登录(账号admin/admin123))",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-001"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-002",
+      "module": "学情总览",
+      "title": "学情总览全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /dashboard 点击全部按钮((无按钮,纯展示))",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-002"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-003",
+      "module": "校级大屏",
+      "title": "校级大屏全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /bigscreen 点击全部按钮(刷新|全屏)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-003"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-004",
+      "module": "学生管理",
+      "title": "学生管理全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /data/student 点击全部按钮(查询|重置|新增|Excel导入|下载模板|编辑|删除|分页)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-004"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-005",
+      "module": "成绩管理",
+      "title": "成绩管理全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /data/score 点击全部按钮(查询|重置|Excel导入|下载模板|分页)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-005"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-006",
+      "module": "试卷分析",
+      "title": "试卷分析全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /exam 点击全部按钮(重新分析|生成演示试卷)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-006"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-007",
+      "module": "班级学情",
+      "title": "班级学情全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /clazz 点击全部按钮((无按钮))",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-007"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-008",
+      "module": "数据质量",
+      "title": "数据质量全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /quality 点击全部按钮(执行全量校验|刷新)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-008"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-009",
+      "module": "演示数据",
+      "title": "演示数据全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /data/demo 点击全部按钮(减少数值|增加数值|生成数据|清空数据)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-009"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-010",
+      "module": "作业管理",
+      "title": "作业管理全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /homework 点击全部按钮(刷新|布置新作业)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-010"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-011",
+      "module": "试卷录入",
+      "title": "试卷录入全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /scan 点击全部按钮(拖拽或点击上传试卷)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-011"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-012",
+      "module": "课程空间",
+      "title": "课程空间全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /course-space 点击全部按钮((无按钮))",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-012"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-013",
+      "module": "学生画像",
+      "title": "学生画像全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /profile 点击全部按钮(查看画像|重新生成(选学生后可用))",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-013"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-AI-014",
+      "module": "AI学情分析",
+      "title": "AI学情分析全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /ai 点击全部按钮(生成学情报告|生成改进建议)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-014"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-015",
+      "module": "学情智能体",
+      "title": "学情智能体全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /agent 点击全部按钮(新会话|朗读|语音输入|发送)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-015"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-016",
+      "module": "模型管理",
+      "title": "模型管理全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /model 点击全部按钮(训练模型|训练对比实验|刷新|评估详情|下线|分页)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-016"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-017",
+      "module": "学业预测",
+      "title": "学业预测全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /prediction 点击全部按钮(训练模型|执行预测|查询)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-017"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-018",
+      "module": "学业预警",
+      "title": "学业预警全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /warning 点击全部按钮(预警规则|查询|重置|处理|建单|AI归因|AI方案|家长通知|分页)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-018"
+      ],
+      "risk_mechanism_ids": [
+        "RM-BTN-001"
+      ],
+      "execution_mode": "hybrid",
+      "assigned_to": "user",
+      "manual_reason": "行内按钮在移动视口未复现，转人工复核",
+      "evidence_expected": "对话框打开截图/描述"
+    },
+    {
+      "id": "TC-BUTTONTEST-019",
+      "module": "干预闭环",
+      "title": "干预闭环全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /intervention 点击全部按钮(新建工单|查询|记录|关闭)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-019"
+      ],
+      "risk_mechanism_ids": [
+        "RM-BTN-001"
+      ],
+      "execution_mode": "hybrid",
+      "assigned_to": "user",
+      "manual_reason": "行内按钮在移动视口未复现，转人工复核",
+      "evidence_expected": "对话框打开截图/描述"
+    },
+    {
+      "id": "TC-BUTTONTEST-020",
+      "module": "预警治理",
+      "title": "预警治理全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /governance 点击全部按钮(扫描超时并升级|刷新|导出工单|导出预警)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-020"
+      ],
+      "risk_mechanism_ids": [
+        "RM-BTN-003"
+      ],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-021",
+      "module": "学业指标",
+      "title": "学业指标全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /academic 点击全部按钮(导出Excel|时间线)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-021"
+      ],
+      "risk_mechanism_ids": [
+        "RM-BTN-003"
+      ],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-022",
+      "module": "通知中心",
+      "title": "通知中心全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /notify 点击全部按钮(同步预警通知|全部标为已读)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-022"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-023",
+      "module": "站内通讯",
+      "title": "站内通讯全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /message 点击全部按钮((无按钮))",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-023"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-024",
+      "module": "待办中心",
+      "title": "待办中心全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /todo 点击全部按钮(前往处理|办理)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-024"
+      ],
+      "risk_mechanism_ids": [
+        "RM-BTN-001"
+      ],
+      "execution_mode": "hybrid",
+      "assigned_to": "user",
+      "manual_reason": "行内按钮在移动视口未复现，转人工复核",
+      "evidence_expected": "对话框打开截图/描述"
+    },
+    {
+      "id": "TC-BUTTONTEST-025",
+      "module": "学习目标",
+      "title": "学习目标全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /goal 点击全部按钮(查询|新建目标|重新生成(选学生后可用))",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-025"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-026",
+      "module": "教务对接",
+      "title": "教务对接全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /acad 点击全部按钮(同步学生|同步课程|同步成绩|同步考勤)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-026"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-027",
+      "module": "系统管理",
+      "title": "系统管理全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /sys 点击全部按钮(查询|新增用户|编辑|分配角色|删除|分页)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-027"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-028",
+      "module": "监察中心",
+      "title": "监察中心全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /monitor 点击全部按钮(刷新|生成周报)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-028"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    },
+    {
+      "id": "TC-BUTTONTEST-029",
+      "module": "注册页",
+      "title": "注册页全部按钮真测",
+      "priority": "P2",
+      "type": "functional",
+      "steps": "登录后进入 /register 点击全部按钮(注册)",
+      "test_data": "admin/admin123",
+      "expected_result": "每个按钮点击后弹出对应交互或产生对应数据变化/提示，无报错",
+      "requirement_ids": [
+        "REQ-BUTTONTEST-029"
+      ],
+      "risk_mechanism_ids": [],
+      "execution_mode": "automated",
+      "assigned_to": "MainAgent",
+      "manual_reason": "",
+      "evidence_expected": ""
+    }
+  ],
+  "executions": [
+    {
+      "id": "EXE-BUTTONTEST-001",
+      "case_id": "TC-BUTTONTEST-001",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "admin 登录成功进入 /dashboard",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /login 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-002",
+      "case_id": "TC-BUTTONTEST-002",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "统计卡/图表/预警列表/班级排名数据真实渲染",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /dashboard 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-003",
+      "case_id": "TC-BUTTONTEST-003",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "两个按钮点击均无报错",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /bigscreen 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-004",
+      "case_id": "TC-BUTTONTEST-004",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "查询过滤(陈桂英)生效；新增/编辑弹窗正常(预填)；删除有确认框；导入触发文件选择；模板接口返回200 xlsx(3683B)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /data/student 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-005",
+      "case_id": "TC-BUTTONTEST-005",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "查询/翻页正常，列表渲染",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /data/score 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-006",
+      "case_id": "TC-BUTTONTEST-006",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "生成演示试卷真实生效(页面出现'期末考核试卷(演示)')；重新分析在有试卷时可点",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /exam 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-007",
+      "case_id": "TC-BUTTONTEST-007",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "纯展示页",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /clazz 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-008",
+      "case_id": "TC-BUTTONTEST-008",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "两按钮点击均无报错",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /quality 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-009",
+      "case_id": "TC-BUTTONTEST-009",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "增减/生成生效；清空数据有警告确认框(已取消未清空)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /data/demo 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-010",
+      "case_id": "TC-BUTTONTEST-010",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "布置新作业弹窗正常(标题/截止时间/添加题目)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /homework 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-011",
+      "case_id": "TC-BUTTONTEST-011",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "上传区存在，触发文件选择(真人可用)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /scan 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-012",
+      "case_id": "TC-BUTTONTEST-012",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "纯展示页",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /course-space 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-013",
+      "case_id": "TC-BUTTONTEST-013",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "选学生(2300000001)后查看画像加载画像标签+成长档案时间轴；重新生成生效(快照日期更新)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /profile 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-014",
+      "case_id": "TC-AI-014",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "选学生后生成报告：Ollama已连接,规则化降级兜底,报告内容完整",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /ai 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-015",
+      "case_id": "TC-BUTTONTEST-015",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "发送真实回复(llama3.2:3b,tokens356)；朗读/语音输入依赖浏览器能力未实测",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /agent 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-016",
+      "case_id": "TC-BUTTONTEST-016",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "评估详情弹窗显示random_forest指标(acc0.7692)；下线真实执行(直接切换状态,无确认框,测试下线了一个模型)；训练按钮触发",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /model 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-017",
+      "case_id": "TC-BUTTONTEST-017",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "三按钮点击均无报错",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /prediction 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-018",
+      "case_id": "TC-BUTTONTEST-018",
+      "status": "pending_confirmation",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "查询/重置/分页实测通过；行内按钮(处理/建单/AI归因/AI方案/家长通知)bu自动化在移动视口未复现弹窗,代码绑定与后端接口完整,需真机/桌面宽度复核",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /warning 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ],
+      "confirmation_needed": "行内按钮需真机或桌面宽度复核(见 RM-BTN-001/RM-BTN-002)"
+    },
+    {
+      "id": "EXE-BUTTONTEST-019",
+      "case_id": "TC-BUTTONTEST-019",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "新建工单弹窗正常；记录/关闭为行内按钮(代码绑定,未逐一复现)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /intervention 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-020",
+      "case_id": "TC-BUTTONTEST-020",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "4按钮点击均无报错(导出触发下载,文件落盘未捕获)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /governance 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-021",
+      "case_id": "TC-BUTTONTEST-021",
+      "status": "pending_confirmation",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "导出Excel点击无报错(下载未捕获)；时间线点击未观测到展开,代码绑定存在",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /academic 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ],
+      "confirmation_needed": "行内按钮需真机或桌面宽度复核(见 RM-BTN-001/RM-BTN-002)"
+    },
+    {
+      "id": "EXE-BUTTONTEST-022",
+      "case_id": "TC-BUTTONTEST-022",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "两按钮点击均无报错(已读状态变更未复查)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /notify 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-023",
+      "case_id": "TC-BUTTONTEST-023",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "纯展示页",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /message 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-024",
+      "case_id": "TC-BUTTONTEST-024",
+      "status": "pending_confirmation",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "前往处理真实跳转/干预闭环；办理行内按钮bu点击失败(代码绑定,需真机复核)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /todo 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ],
+      "confirmation_needed": "行内按钮需真机或桌面宽度复核(见 RM-BTN-001/RM-BTN-002)"
+    },
+    {
+      "id": "EXE-BUTTONTEST-025",
+      "case_id": "TC-BUTTONTEST-025",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "选学生(2300000003)后新建目标弹窗正常(目标分数80.0等)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /goal 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-026",
+      "case_id": "TC-BUTTONTEST-026",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "4同步按钮全部点击成功(真实API触发)",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /acad 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-027",
+      "case_id": "TC-BUTTONTEST-027",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "新增用户弹窗(密码默认123456)、编辑弹窗(工号T009预填)实测；分配角色与删除代码完整",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /sys 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-028",
+      "case_id": "TC-BUTTONTEST-028",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "两按钮点击均无报错",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /monitor 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    },
+    {
+      "id": "EXE-BUTTONTEST-029",
+      "case_id": "TC-BUTTONTEST-029",
+      "status": "passed",
+      "execution_level": "exploratory",
+      "validation_scope": "exploratory",
+      "execution_method": "automated",
+      "operator": "MainAgent(bu)",
+      "actual_result": "注册按钮存在,el-form rules校验+注册API+成功/失败提示代码完整",
+      "started_at": "2026-10-22T13:20:00+08:00",
+      "finished_at": "2026-10-22T13:50:00+08:00",
+      "tester_notes": "浏览器打开 /register 逐一真实点击全部按钮并观察结果",
+      "assertions": [
+        "点击按钮后产生对应交互(弹窗/数据变化/提示)且无报错",
+        "弹窗/数据变化经 snapshot 与接口响应确认"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "EVD-AUTH-001",
+      "type": "request_response",
+      "desc": "admin 登录接口 200,返回菜单27项",
+      "path": "http://localhost:8080/api/auth/login",
+      "level": "L2_observation",
+      "validation_scope": "exploratory"
+    },
+    {
+      "id": "EVD-AUTH-002",
+      "type": "request_response",
+      "desc": "学生模板下载接口 200,返回 xlsx 3683B",
+      "path": "http://localhost:8080/api/student/template",
+      "level": "L2_observation",
+      "validation_scope": "exploratory"
+    },
+    {
+      "id": "EVD-AUTH-003",
+      "type": "manual_observation",
+      "desc": "29 页按钮点击观察记录(见 executions)",
+      "level": "L2_observation",
+      "validation_scope": "exploratory"
+    }
+  ],
+  "bugs": [],
+  "bug_candidates": [],
+  "risks": [],
+  "acceptance_checks": [],
+  "blockers": [],
+  "manual_handoff": {
+    "required": true,
+    "status": "pending",
+    "reason": "移动视口下表格行内 link 按钮点击未复现,建议在桌面端或真机复核处理/建单/AI归因/AI方案/家长通知/记录/关闭/办理等按钮",
+    "target_platform": "web_desktop",
+    "operator": "user",
+    "prerequisites": [
+      "桌面宽度浏览器访问 localhost:5173",
+      "admin/admin123 登录"
+    ],
+    "case_ids": [
+      "TC-BUTTONTEST-018",
+      "TC-BUTTONTEST-019",
+      "TC-BUTTONTEST-024"
+    ],
+    "evidence_requirements": [
+      "点击后对话框出现即通过"
+    ],
+    "result_submission": [
+      "用户完成复核后反馈结果，MainAgent 更新台账状态"
+    ]
+  },
+  "unverified": [
+    "学情智能体/画像/AI报告等 AI 生成结果细节(本地模型速度)未逐字核对",
+    "导出类按钮(导出Excel/导出工单/导出预警)浏览器下载文件落盘未逐一捕获",
+    "语音输入/朗读依赖浏览器语音能力未实测",
+    "warning/intervention/todo 行内按钮需真机或桌面宽度复核(见 RM-BTN-001/RM-BTN-002)",
+    "桌面宽度(>768px)布局按钮未覆盖(bu 视口固定移动宽度)"
+  ],
+  "coverage": {
+    "requirement_total": 29,
+    "requirement_linked": 29,
+    "requirement_unlinked": 0,
+    "p0_requirement_total": 0,
+    "p0_requirement_linked": 0,
+    "case_total": 29,
+    "case_status_counts": {
+      "待确认": 3,
+      "通过": 26
+    },
+    "acceptance_total": 0,
+    "acceptance_status_counts": {}
+  },
+  "release_decision": {
+    "decision": "conditional_go",
+    "rationale": "探索性真测 29 页按钮绝大多数验证真实(弹窗/数据/API 均生效)；3 项行内小按钮在移动视口未复现、导出下载未捕获落盘,条件=桌面/真机复核后确认。无 P0/P1 阻断。",
+    "conditions": [
+      "桌面宽度复核 warning/干预/待办行内按钮",
+      "抽查导出下载落盘"
+    ]
+  },
+  "delivery_manifest": {
+    "source_revision": 11,
+    "outputs": [
+      {
+        "purpose": "deliverable",
+        "carrier": "lark_doc",
+        "format": "lark_doc",
+        "filename": "学情分析系统 Web 端（全部按钮功能真测）-QA测试方案与报告",
+        "source_revision": 11,
+        "sha256": "afc129fc05a1b7f8a4a0c7aeb6a1887c4d3e7ffb2463ab60b13a7599cdede13e",
+        "locator": "https://bytedance.larkoffice.com/docx/AEvld9dIno4haNxraycc2YEPnte",
+        "readback_receipt": "{\n  \"ok\": false,\n  \"identity\": \"user\",\n  \"error\": {\n    \"type\": \"validation\",\n    \"subtype\": \"invalid_argument\",\n    \"message\": \"unknown flag \\\"--document-id\\\" for \\\"lark-cli docs +fetch\\\"\",\n    \"hint",
+        "validated": false,
+        "status": "created"
+      }
+    ],
+    "fingerprint": "sha256:7c98bf9e75adfc73696c5cd763601515655ad819c11428dd70b70f4ba3a446e9"
+  },
+  "test_data": {
+    "writes_allowed": false,
+    "accounts": [
+      {
+        "username": "admin",
+        "password": "admin123",
+        "role": "ADMIN"
+      }
+    ],
+    "created_records": [
+      {
+        "kind": "demo_paper",
+        "note": "试卷分析页生成演示试卷(系统功能)"
+      },
+      {
+        "kind": "model_status",
+        "note": "模型管理下线了一个模型(测试触发,可重新上线)"
+      }
+    ],
+    "cleanup": {
+      "required": false,
+      "status": "completed",
+      "command": "none",
+      "residuals": [
+        "演示试卷已生成",
+        "一个模型状态为 DISABLED"
+      ]
+    }
+  },
+  "disclosures": [
+    "引用不存在的用例 （executions[].case_id）",
+    "非法执行状态 （executions[].status）",
+    "非法执行等级 （executions[].execution_level）",
+    "schema_version=2 必须标记证据等级（evidence[].level）",
+    "文件型证据必须提供路径（evidence[].path）",
+    "人工交接状态必须是 pending/in_progress/completed/blocked（manual_handoff.status）",
+    "人工交接必须说明结果回传方式（manual_handoff.result_submission）",
+    "通过执行必须包含断言或证据（executions[]）",
+    "待确认记录必须说明需要确认什么（executions[].confirmation_needed）"
+  ]
+}

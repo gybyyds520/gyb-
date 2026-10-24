@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Faculty Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+    <div class="nav-links">
+
+        <a href="/faculty" class="nav-btn">
+            🏠 Home
+        </a>
+
+        <a href="/students" class="nav-btn">
+            👨‍🎓 Students
+        </a>
+
+        <a href="/analytics" class="nav-btn">
+            📊 Analytics
+        </a>
+
+        <a href="/" class="nav-btn logout-btn">
+            🚪 Logout
+        </a>
+
+        <button
+            class="nav-btn"
+            onclick="toggleTheme()">
+            🌙 / ☀️
+        </button>
+
+    </div>
+
+</div>
+
+<div class="container">
+
+    <!-- FACULTY INFO -->
+
+    <div class="card">
+
+        <h2>Faculty Information</h2>
+
+        <p><b>Name:</b> {{ faculty['name'] }}</p>
+
+        <p><b>Department:</b> {{ faculty['department'] }}</p>
+
+        <p><b>Subject:</b> {{ faculty['subject'] }}</p>
+
+        <p><b>Experience:</b> {{ faculty['experience'] }} Years</p>
+
+    </div>
+
+    <!-- STUDENT MANAGEMENT -->
+
+    <div class="card">
+
+        <h2>Student Management</h2>
+
+        <button
+            type="button"
+            onclick="toggleStudentForm()">
+            ➕ Add New Student
+        </button>
+
+    </div>
+
+    <div
+        id="student-form"
+        class="card"
+        style="display:none;">
+
+        <h2>Add New Student</h2>
+
+        <form action="/add-student" method="POST">
+
+            <input
+                type="text"
+                name="name"
+                placeholder="Student Name"
+                required>
+
+            <br><br>
+
+            <input
+                type="text"
+                name="register_no"
+                placeholder="Register Number"
+                required>
+
+            <br><br>
+
+            <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                required>
+
+            <br><br>
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                required>
+
+            <br><br>
+
+            <input
+                type="text"
+                name="department"
+                placeholder="Department"
+                required>
+
+            <br><br>
+
+            <input
+                type="number"
+                name="semester"
+                placeholder="Semester"
+                required>
+
+            <br><br>
+
+            <input
+                type="number"
+                step="0.01"
+                name="attendance"
+                placeholder="Attendance %"
+                required>
+
+            <br><br>
+
+            <input
+                type="number"
+                step="0.01"
+                name="cgpa"
+                placeholder="CGPA"
+                required>
+
+            <br><br>
+
+            <input
+                type="number"
+                name="total_classes"
+                placeholder="Total Classes"
+                required>
+
+            <br><br>
+
+            <button type="submit">
+                Save Student
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- DOWNLOAD CSV -->
+
+    <div class="card">
+
+        <h2>Student Records</h2>
+
+        <a href="/download-students-csv">
+
+            <button>
+                📊 Download Students CSV
+            </button>
+
+        </a>
+
+    </div>
+
+    <!-- ADD MARKS -->
+
+    <div class="card">
+
+        <h2>Add Student Marks</h2>
+
+        <form action="/add-marks" method="POST">
+
+            <input
+                type="number"
+                name="student_id"
+                placeholder="Student ID"
+                required>
+
+            <br><br>
+
+            <input
+                type="text"
+                name="subject"
+                placeholder="Subject"
+                required>
+
+            <br><br>
+
+            <input
+                type="number"
+                name="internal_marks"
+                placeholder="Internal Marks"
+                required>
+
+            <br><br>
+
+            <input
+                type="number"
+                name="assignment_marks"
+                placeholder="Assignment Marks"
+                required>
+
+            <br><br>
+
+            <input
+                type="number"
+                name="semester_marks"
+                placeholder="Semester Marks"
+                required>
+
+            <br><br>
+
+            <button type="submit">
+                Add Marks
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- ATTENDANCE -->
+
+    <div class="card">
+
+        <h2>Update Attendance</h2>
+
+        <form action="/update-attendance" method="POST">
+
+            <input
+                type="number"
+                name="student_id"
+                placeholder="Student ID"
+                required>
+
+            <br><br>
+
+            <input
+                type="number"
+                name="attendance"
+                placeholder="Attendance %"
+                required>
+
+            <br><br>
+
+            <button type="submit">
+                Update Attendance
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- PUBLISH NOTIFICATION -->
+
+    <div class="card">
+
+        <h2>Publish Notification</h2>
+
+        <form action="/add-notification" method="POST">
+            <input
+    type="number"
+    name="student_id"
+    placeholder="Student ID"
+    required>
+
+<br><br>
+
+            <input
+                type="text"
+                name="title"
+                placeholder="Title"
+                required>
+
+            <br><br>
+
+            <textarea
+                name="message"
+                rows="5"
+                placeholder="Notification Message"
+                required></textarea>
+
+            <br><br>
+
+            <button type="submit">
+                Publish
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- EDIT NOTIFICATION -->
+
+    <div class="card">
+
+        <h2>Edit Notification</h2>
+
+        <form action="/edit-notification" method="POST">
+
+            <input
+                type="number"
+                name="notification_id"
+                placeholder="Notification ID"
+                required>
+
+            <br><br>
+
+            <input
+                type="text"
+                name="title"
+                placeholder="New Title"
+                required>
+
+            <br><br>
+
+            <textarea
+                name="message"
+                rows="4"
+                placeholder="New Message"
+                required></textarea>
+
+            <br><br>
+
+            <button type="submit">
+                Update Notification
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- DELETE NOTIFICATION -->
+
+    <div class="card">
+
+        <h2>Delete Notification</h2>
+
+        <form action="/delete-notification" method="POST">
+
+            <input
+                type="text"
+                name="title"
+                placeholder="Notification Title"
+                required>
+
+            <br><br>
+
+            <button type="submit">
+                Delete Notification
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- DELETE MARKS -->
+
+    <div class="card">
+
+        <h2>Delete Student Marks</h2>
+
+        <form action="/delete-marks" method="POST">
+
+            <input
+                type="number"
+                name="student_id"
+                placeholder="Student ID"
+                required>
+
+            <br><br>
+
+            <input
+                type="text"
+                name="subject"
+                placeholder="Subject Name"
+                required>
+
+            <br><br>
+
+            <button type="submit">
+                Delete Marks
+            </button>
+
+        </form>
+
+    </div>
+
+    <a href="/students">
+        <button>
+            View Students
+        </button>
+    </a>
+
+</div>
+
+<script>
+
+function toggleStudentForm(){
+
+    let form =
+        document.getElementById(
+            "student-form"
+        );
+
+    if(form.style.display === "none"){
+
+        form.style.display = "block";
+
+    }else{
+
+        form.style.display = "none";
+    }
+}
+
+</script>
+
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+
+</body>
+</html>

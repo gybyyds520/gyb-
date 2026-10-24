@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <!-- 个人中心卡片（移动端专属，通用组件）：头像 + 身份 + 学情速览 -->
-    <MobileProfileCard :stats="profileStats" :sub="overview.studentNo || '学号未绑定'" />
+    <MobileProfileCard :stats="profileStats" :sub="overview?.studentNo || '学号未绑定'" />
 
     <el-alert :closable="false" type="info" show-icon style="margin-bottom: 16px">
       <template #title>
@@ -323,7 +323,33 @@
           </el-button>
         </div>
       </div>
+
+      <!-- 我的激励卡相册 -->
+      <div v-if="motivationRecords.length" style="margin-top: 18px">
+        <p style="font-weight: 600; margin: 0 0 8px">
+          我的激励卡相册（{{ motivationRecords.length }}）<el-tag size="small" style="margin-left: 6px">点击可查看大图</el-tag>
+        </p>
+        <div v-loading="motivationRecordsLoading" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px">
+          <div
+            v-for="r in motivationRecords"
+            :key="r.id"
+            style="cursor: pointer; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.12)"
+            @click="motivationPreviewUrl = r.imageUrl; motivationPreviewDialog = true"
+          >
+            <img
+              :src="r.imageUrl"
+              :alt="r.studentName + '的激励卡'"
+              style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block"
+            />
+          </div>
+        </div>
+      </div>
     </el-card>
+
+    <!-- 激励卡预览 -->
+    <el-dialog v-model="motivationPreviewDialog" title="激励卡预览" width="420px" destroy-on-close>
+      <img v-if="motivationPreviewUrl" :src="motivationPreviewUrl" style="width: 100%; border-radius: 8px" alt="激励卡" />
+    </el-dialog>
   </div>
 
   <!-- 作业作答 -->
@@ -394,7 +420,7 @@ import { listBase } from '@/api/base'
 import { myHomework, studentHomeworkDetail, submitHomework } from '@/api/homework'
 import { myMistakeList, myMistakeStats, markMistakeMastered, removeMistake } from '@/api/mistake'
 import { aiTutor } from '@/api/ai'
-import { generateMotivationCard } from '@/api/motivation'
+import { generateMotivationCard, motivationRecords as motivationRecordsApi } from '@/api/motivation'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -460,6 +486,21 @@ const motivationStyleText = computed(() =>
   ({ ACADEMIC: '学术蓝', STAR: '星空金', NATURE: '清新绿' })[motivationStyle.value] || '学术蓝'
 )
 
+/** 我的激励卡相册（历史记录） */
+const motivationRecords = ref([])
+const motivationRecordsLoading = ref(false)
+const motivationPreviewUrl = ref('')
+const motivationPreviewDialog = ref(false)
+
+async function loadMotivationRecords() {
+  motivationRecordsLoading.value = true
+  try {
+    motivationRecords.value = (await motivationRecordsApi()) || []
+  } finally {
+    motivationRecordsLoading.value = false
+  }
+}
+
 async function generateMotivation() {
   motivationLoading.value = true
   motivationError.value = ''
@@ -469,6 +510,7 @@ async function generateMotivation() {
     motivationPrompt.value = res.highlight?.promptWord || ''
     motivationStudentName.value = res.studentName || ''
     motivationGpa.value = res.highlight?.avgGpa ?? '-'
+    await loadMotivationRecords()
   } catch (e) {
     motivationError.value = e?.message || '生成失败，请确认本地 SD 图像服务已启动（8001 端口）'
   } finally {
@@ -737,6 +779,7 @@ onMounted(async () => {
   await loadPractices()
   await loadHomework()
   await loadMistakes()
+  await loadMotivationRecords()
   renderCharts()
   window.addEventListener('resize', handleResize)
 })

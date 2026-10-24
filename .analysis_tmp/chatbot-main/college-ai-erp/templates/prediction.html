@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>AI Performance Center</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+    AI Performance Center |
+    <a href="/dashboard" style="color:white;">
+Dashboard
+</a>
+
+
+
+    <a href="/analytics" style="color:white;">Analytics</a> |
+
+    <a href="/prediction" style="color:white;">AI Performance Center</a>
+<button
+    class="nav-btn"
+    onclick="toggleTheme()"
+>
+    🌙 / ☀️
+</button>
+
+</div>
+
+<div class="container">
+
+<div class="grid">
+
+<div class="card">
+<h2>Predicted Grade</h2>
+<h1>{{ predicted_grade }}</h1>
+</div>
+
+<div class="card">
+<h2>Pass Probability</h2>
+<h1>{{ pass_probability }}</h1>
+</div>
+
+<div class="card">
+<h2>Academic Risk</h2>
+<h1>{{ risk }}</h1>
+</div>
+
+<div class="card">
+<h2>Weakest Subject</h2>
+<h1>{{ weakest_subject }}</h1>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Student Summary</h2>
+
+<p>Attendance: {{ student.attendance }}%</p>
+
+<p>CGPA: {{ student.cgpa }}</p>
+
+<p>Average Marks: {{ average_marks }}</p>
+
+</div>
+
+<div class="card">
+
+<h2>AI Academic Advisor</h2>
+
+<pre style="white-space: pre-wrap;">
+{{ ai_report }}
+</pre>
+
+</div>
+<div class="card">
+
+    <h2>Export Report</h2>
+
+    <a href="/download-report">
+
+        <button style="
+            background:#2563eb;
+            color:white;
+            padding:12px 20px;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:16px;
+        ">
+            Download AI Report PDF
+        </button>
+
+    </a>
+
+</div>
+
+<a href="/download-report">
+    <button>Download PDF Report</button>
+</a>
+
+<a href="/dashboard">
+    <button>Back To Dashboard</button>
+</a>
+
+
+</div>
+
+</div>
+<script>
+
+function toggleTheme(){
+
+    document.body.classList.toggle(
+        "light-mode"
+    );
+
+    localStorage.setItem(
+        "theme",
+        document.body.classList.contains(
+            "light-mode"
+        )
+    );
+}
+
+if(
+    localStorage.getItem("theme")
+    === "true"
+){
+
+    document.body.classList.add(
+        "light-mode"
+    );
+}
+
+</script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+</body>
+</html>

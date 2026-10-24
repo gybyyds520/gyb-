@@ -6,8 +6,10 @@ import com.gyb.xqfx.client.SdServiceClient;
 import com.gyb.xqfx.common.BusinessException;
 import com.gyb.xqfx.common.ErrorCode;
 import com.gyb.xqfx.common.Result;
+import com.gyb.xqfx.entity.MotivationRecord;
 import com.gyb.xqfx.entity.Score;
 import com.gyb.xqfx.entity.Student;
+import com.gyb.xqfx.mapper.MotivationRecordMapper;
 import com.gyb.xqfx.mapper.ScoreMapper;
 import com.gyb.xqfx.mapper.StudentMapper;
 import com.gyb.xqfx.security.SecurityUtils;
@@ -31,9 +33,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -53,7 +58,11 @@ public class MotivationController {
     private final SdServiceClient sdServiceClient;
     private final StudentMapper studentMapper;
     private final ScoreMapper scoreMapper;
+    private final MotivationRecordMapper motivationRecordMapper;
     private final DataScopeService dataScopeService;
+
+    /** 管理员角色：可查全部记录 / 批量生成 */
+    private static final Set<String> MANAGER_ROLES = Set.of("ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN");
 
     @Value("${xqfx.motivation.upload-dir:./upload/motivation}")
     private String uploadDir;
@@ -70,15 +79,21 @@ public class MotivationController {
     @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER", "STUDENT", "PARENT"})
     public Result<Map<String, Object>> generate(@RequestParam(value = "style", defaultValue = "ACADEMIC") String style,
                                                 @RequestParam(value = "studentId", required = false) Long studentId) {
-        String styleName = STYLES.containsKey(style) ? style : "ACADEMIC";
         Long targetStudentId = resolveTargetStudent(studentId);
-        Student student = studentMapper.selectById(targetStudentId);
+        Map<String, Object> data = generateOne(targetStudentId, style);
+        return Result.success(data, "生成成功，可在本地环境预览下载");
+    }
+
+    /** 生成并落盘一张激励卡，写生成记录，返回前端展示数据 */
+    private Map<String, Object> generateOne(Long studentId, String style) {
+        String styleName = STYLES.containsKey(style) ? style : "ACADEMIC";
+        Student student = studentMapper.selectById(studentId);
         if (student == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "学生不存在");
         }
 
         // 1. 学情亮点
-        Map<String, Object> highlight = buildHighlight(targetStudentId);
+        Map<String, Object> highlight = buildHighlight(studentId);
         // 2. 组装提示词
         String prompt = STYLES.get(styleName) + "，" + highlight.get("promptWord");
         // 3. 本地 SD 生成
@@ -98,13 +113,107 @@ public class MotivationController {
             throw new BusinessException(ErrorCode.BUSINESS_ERROR, "激励卡保存失败");
         }
 
+        // 5. 写生成记录（历史激励卡相册）
+        MotivationRecord record = new MotivationRecord();
+        record.setStudentId(studentId);
+        record.setStudentName(student.getName());
+        record.setStyle(styleName);
+        record.setPrompt(prompt);
+        record.setImagePath("/api/motivation/image/" + month + "/" + fileName);
+        motivationRecordMapper.insert(record);
+
         Map<String, Object> data = new HashMap<>();
-        data.put("imageUrl", "/api/motivation/image/" + month + "/" + fileName);
+        data.put("imageUrl", record.getImagePath());
         data.put("prompt", prompt);
         data.put("studentName", student.getName());
         data.put("style", styleName);
         data.put("highlight", highlight);
-        return Result.success(data, "生成成功，可在本地环境预览下载");
+        data.put("recordId", record.getId());
+        return data;
+    }
+
+    @Operation(summary = "历史激励卡记录（学生=本人；教师/家长按数据范围；管理员查全部）")
+    @GetMapping("/records")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER", "STUDENT", "PARENT"})
+    public Result<List<Map<String, Object>>> records(@RequestParam(value = "studentId", required = false) Long studentId) {
+        String userType = SecurityUtils.currentUserType();
+        Long queryStudentId;
+        if (studentId != null) {
+            dataScopeService.requireStudentAccess(studentId);
+            queryStudentId = studentId;
+        } else if ("STUDENT".equals(userType)) {
+            queryStudentId = SecurityUtils.currentStudentId();
+            if (queryStudentId == null) {
+                throw new BusinessException(ErrorCode.FORBIDDEN, "当前账号未绑定学生档案");
+            }
+        } else if (MANAGER_ROLES.contains(userType)) {
+            queryStudentId = null; // 管理员查全部
+        } else {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请指定要查询的学生（studentId）");
+        }
+
+        List<MotivationRecord> list = motivationRecordMapper.selectList(new LambdaQueryWrapper<MotivationRecord>()
+                .eq(queryStudentId != null, MotivationRecord::getStudentId, queryStudentId)
+                .orderByDesc(MotivationRecord::getCreateTime)
+                .last("limit 100"));
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (MotivationRecord r : list) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", r.getId());
+            item.put("studentId", r.getStudentId());
+            item.put("studentName", r.getStudentName());
+            item.put("style", r.getStyle());
+            item.put("prompt", r.getPrompt());
+            item.put("imageUrl", r.getImagePath());
+            item.put("createTime", r.getCreateTime());
+            result.add(item);
+        }
+        return Result.success(result);
+    }
+
+    @Operation(summary = "批量生成激励卡（管理员/教师，单次最多 20 人）")
+    @PostMapping("/batch-generate")
+    @RequireRole({"ADMIN", "SCHOOL_ADMIN", "COLLEGE_ADMIN", "COUNSELOR", "TEACHER"})
+    public Result<Map<String, Object>> batchGenerate(@RequestBody Map<String, Object> body) {
+        Object idsObj = body.get("studentIds");
+        if (!(idsObj instanceof List<?> ids) || ids.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请提供 studentIds 学生ID列表");
+        }
+        String style = body.get("style") == null ? "ACADEMIC" : String.valueOf(body.get("style"));
+        int max = Math.min(ids.size(), 20);
+
+        String userType = SecurityUtils.currentUserType();
+        boolean isManager = MANAGER_ROLES.contains(userType);
+
+        List<Map<String, Object>> succeeded = new ArrayList<>();
+        List<Map<String, Object>> failed = new ArrayList<>();
+        for (int i = 0; i < max; i++) {
+            Long sid = Long.valueOf(String.valueOf(ids.get(i)));
+            try {
+                if (!isManager) {
+                    dataScopeService.requireStudentAccess(sid);
+                }
+                Map<String, Object> data = generateOne(sid, style);
+                Map<String, Object> ok = new LinkedHashMap<>();
+                ok.put("studentId", sid);
+                ok.put("studentName", data.get("studentName"));
+                ok.put("imageUrl", data.get("imageUrl"));
+                succeeded.add(ok);
+            } catch (Exception e) {
+                log.warn("批量生成失败 studentId={}: {}", sid, e.getMessage());
+                Map<String, Object> err = new LinkedHashMap<>();
+                err.put("studentId", sid);
+                err.put("error", e.getMessage());
+                failed.add(err);
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", max);
+        result.put("successCount", succeeded.size());
+        result.put("failedCount", failed.size());
+        result.put("succeeded", succeeded);
+        result.put("failed", failed);
+        return Result.success(result);
     }
 
     @Operation(summary = "读取激励卡图片（放行）")
