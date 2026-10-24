@@ -55,3 +55,10 @@ server/tmp_e2e/
 audit_create_resp.txt
 audit_health.txt
 audit_run*.ps1
+
+# ===== SD 激励卡 =====
+.sd_venv/
+sd-models/
+*.whl
+.sd_venv/*.png
+

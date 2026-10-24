@@ -1,0 +1,12 @@
+# 成长激励卡图像服务（sd-turbo）专用依赖 —— 安装到 ml/.sd_venv
+# torch/torchvision 需单独用 CUDA 镜像安装：
+#   .sd_venv\Scripts\pip install torch torchvision --index-url https://mirrors.tuna.tsinghua.edu.cn/pytorch-wheels/cu128
+diffusers>=0.30
+transformers>=4.44
+accelerate>=0.33
+safetensors>=0.4
+pillow>=10.0
+huggingface_hub>=0.24
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.6

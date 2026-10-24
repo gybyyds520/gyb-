@@ -287,6 +287,43 @@
         </el-alert>
       </div>
     </el-card>
+
+    <!-- 成长激励卡（本地 Stable Diffusion 绘图生成） -->
+    <el-card shadow="never" style="margin-top: 16px">
+      <template #header>
+        <div class="card-header">
+          <span>成长激励卡</span>
+          <el-tag size="small" effect="plain">AI 绘图（本地 SD）</el-tag>
+        </div>
+      </template>
+      <p style="color: #909399; font-size: 13px; margin: 0 0 10px">
+        根据你的学情亮点（进步课程、平均绩点）自动生成专属激励海报，可下载分享。
+      </p>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+        <el-radio-group v-model="motivationStyle">
+          <el-radio-button label="ACADEMIC">学术蓝</el-radio-button>
+          <el-radio-button label="STAR">星空金</el-radio-button>
+          <el-radio-button label="NATURE">清新绿</el-radio-button>
+        </el-radio-group>
+        <el-button type="primary" :loading="motivationLoading" @click="generateMotivation">
+          生成我的激励卡
+        </el-button>
+      </div>
+      <el-alert v-if="motivationError" type="error" :closable="false" style="margin-top: 12px" :title="motivationError" />
+      <div v-if="motivationImage" style="margin-top: 14px; display: flex; gap: 18px; flex-wrap: wrap">
+        <img :src="motivationImage" alt="成长激励卡" style="width: 280px; max-width: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.16)" />
+        <div style="flex: 1; min-width: 220px">
+          <p style="margin: 6px 0; font-weight: 600">{{ motivationStudentName }}的激励卡 · {{ motivationStyleText }}</p>
+          <p style="color: #909399; font-size: 13px; line-height: 1.8">
+            亮点解读：{{ motivationPrompt }}<br />
+            平均绩点 {{ motivationGpa }}
+          </p>
+          <el-button type="success" plain size="small" tag="a" :href="motivationImage" download="motivation-card.png">
+            下载图片
+          </el-button>
+        </div>
+      </div>
+    </el-card>
   </div>
 
   <!-- 作业作答 -->
@@ -357,6 +394,7 @@ import { listBase } from '@/api/base'
 import { myHomework, studentHomeworkDetail, submitHomework } from '@/api/homework'
 import { myMistakeList, myMistakeStats, markMistakeMastered, removeMistake } from '@/api/mistake'
 import { aiTutor } from '@/api/ai'
+import { generateMotivationCard } from '@/api/motivation'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -409,6 +447,34 @@ const tutorSubject = ref('')
 const tutorQuestion = ref('')
 const tutorAnswer = ref('')
 const tutorLoading = ref(false)
+
+/** 成长激励卡（本地 SD 绘图） */
+const motivationStyle = ref('ACADEMIC')
+const motivationLoading = ref(false)
+const motivationImage = ref('')
+const motivationPrompt = ref('')
+const motivationStudentName = ref('')
+const motivationGpa = ref('-')
+const motivationError = ref('')
+const motivationStyleText = computed(() =>
+  ({ ACADEMIC: '学术蓝', STAR: '星空金', NATURE: '清新绿' })[motivationStyle.value] || '学术蓝'
+)
+
+async function generateMotivation() {
+  motivationLoading.value = true
+  motivationError.value = ''
+  try {
+    const res = await generateMotivationCard({ style: motivationStyle.value })
+    motivationImage.value = res.imageUrl
+    motivationPrompt.value = res.highlight?.promptWord || ''
+    motivationStudentName.value = res.studentName || ''
+    motivationGpa.value = res.highlight?.avgGpa ?? '-'
+  } catch (e) {
+    motivationError.value = e?.message || '生成失败，请确认本地 SD 图像服务已启动（8001 端口）'
+  } finally {
+    motivationLoading.value = false
+  }
+}
 
 function gpaColor(gpa) {
   const v = Number(gpa)
