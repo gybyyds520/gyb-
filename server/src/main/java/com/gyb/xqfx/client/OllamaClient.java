@@ -125,6 +125,11 @@ public class OllamaClient {
         return chat(systemPrompt, userPrompt);
     }
 
+    /** 当前配置的主模型名（健康检查展示用） */
+    public String primaryModelName() {
+        return primaryModel;
+    }
+
     /**
      * 解析实际可用的模型名：配置的模型名可能缺少标签（如 llama3.2），
      * 此处在本地已安装模型中做精确匹配、前缀匹配与包含匹配。

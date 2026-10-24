@@ -60,6 +60,10 @@ public class PaperScanService {
     @Value("${xqfx.scan.script-path:./scripts/paper_extract.py}")
     private String scriptPath;
 
+    /** 试卷解析/分析用大模型（默认跟随命题模型） */
+    @Value("${xqfx.ollama.practice-model:deepseek-r1:7b}")
+    private String parseModel;
+
     /** 题库题目 DTO（AI 解析结果） */
     public static class BankQuestion {
         public String no;
@@ -237,7 +241,7 @@ public class PaperScanService {
                 没有选项的题 options 给空数组 []。无法识别分值给 0。
                 只输出 JSON 数组本身，不要输出任何其它文字或解释。""";
         String user = "试卷文本如下：\n" + truncate(text, 18000);
-        OllamaClient.ChatResult res = ollamaClient.chatWithModel("llama3.1:8b", system, user);
+        OllamaClient.ChatResult res = ollamaClient.chatWithModel(parseModel, system, user);
         if (res == null || res.content == null || res.content.isBlank()) {
             throw new BusinessException(ErrorCode.AI_SERVICE_ERROR, "大模型解析失败（服务不可用），请稍后重试");
         }
@@ -261,7 +265,7 @@ public class PaperScanService {
         String user = "试卷信息：共" + total + "题，其中主观题" + essay + "道。知识点提取与难度评估请依据下列文本：\n"
                 + truncate(text, 12000);
         try {
-            OllamaClient.ChatResult res = ollamaClient.chatWithModel("llama3.1:8b", system, user);
+            OllamaClient.ChatResult res = ollamaClient.chatWithModel(parseModel, system, user);
             if (res == null || res.content == null || res.content.isBlank()) {
                 return null;
             }

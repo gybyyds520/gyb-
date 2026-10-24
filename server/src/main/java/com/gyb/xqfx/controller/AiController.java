@@ -71,7 +71,7 @@ public class AiController {
         boolean cloudAvailable = cloudConfigured && remoteLlmClient.isAvailable();
         String activeProvider = localAvailable ? "LOCAL" : (cloudAvailable ? "CLOUD" : "RULE_FALLBACK");
         Map<String, Object> data = new HashMap<>();
-        data.put("localModel", llmProvider == null || !"cloud".equals(llmProvider) ? "llama3.2:3b" : "cloud-only");
+        data.put("localModel", llmProvider == null || !"cloud".equals(llmProvider) ? ollamaClient.primaryModelName() : "cloud-only");
         data.put("localAvailable", localAvailable);
         data.put("cloudConfigured", cloudConfigured);
         data.put("cloudAvailable", cloudAvailable);
