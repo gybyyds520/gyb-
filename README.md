@@ -18,6 +18,7 @@
 | `docs/市场竞品分析报告.md` | 15 家竞品（K12 7 + 高校/国际 8）深度调研、差距分析、可借鉴清单（证据分级标注） |
 | `docs/完善缺陷路线图.md` | 竞品优点→缺陷完善的三步走收官：P0/P1/P2/P3 任务卡与验收口径 |
 | `docs/全项目功能真伪摸排报告.md` | API 层 202/202、按钮层 32vue、e2e 8 项功能真伪摸排结论（含章节测验提交 bug 修复记录） |
+| `docs/环境准备与下载说明.md` | 全量安装/下载清单：基础软件、Ollama 模型、数据库、前后端依赖、OCR、SD 绘图模型（含镜像坑）、天池数据、云端降级 |
 | `README.md` | 系统概述、启动方式、功能一览、已知环境问题 |
 
 ## 二、目录结构
@@ -39,7 +40,8 @@ gybxx/
 - **前端**：Vue 3 / Vite / Element Plus / ECharts / Pinia / Vue Router
 - **多端界面**：三端差异化布局、功能互通（同一套路由/API）——Web 端经典侧边导航、桌面端（Electron）紧凑客户端风格、移动端底部 TabBar + 抽屉（≤768px 自动切换）
 - **预测**：Python scikit-learn（LR / RF / XGBoost）→ FastAPI 推理微服务，Java 侧 HTTP 调用
-- **大模型**：Ollama 本地部署（llama3.2 主 / qwen2.5 备），SSE 流式，支持降级
+- **大模型**：Ollama 本地部署（DeepSeek R1 开源推理模型 deepseek-r1:7b 主力 / deepseek-r1:1.5b 降级，nomic-embed-text 向量检索），SSE 流式，支持本地→云端双轨降级
+- **AI 绘图**：本地 Stable Diffusion（sd-turbo）离线生成成长激励卡，RTX 显卡实测单张 0.7s
 
 ## 四、快速启动
 
@@ -84,11 +86,26 @@ python run.py            # 监听 http://127.0.0.1:8000
 
 ```bash
 ollama serve
-ollama pull llama3.2:3b
-ollama pull nomic-embed-text    # 知识库向量化
+ollama pull deepseek-r1:7b          # 主力推理模型（约 4.7GB）
+ollama pull deepseek-r1:1.5b        # 降级备选（约 1.1GB）
+ollama pull nomic-embed-text        # 知识库向量化
 ```
 
-### 6. Windows 桌面端（Electron）
+### 6. 成长激励卡 SD 绘图服务（可选功能，端口 8001）
+
+```bash
+cd ml
+python -m venv .sd_venv
+.sd_venv\Scripts\pip install -r sd_requirements.txt   # diffusers 全家桶
+# PyTorch CUDA 版需从官方源下载 wheel 安装（国内镜像不可用，见 docs/环境准备与下载说明.md 第九节）
+.sd_venv\Scripts\python download_model.py             # 下载 sd-turbo 模型（约 3.3GB，断点续传）
+.sd_venv\Scripts\python run_sd.py --port 8001         # 启动，健康检查 http://127.0.0.1:8001/health
+```
+
+> 依赖与坑位（国内 PyTorch 镜像 404、unet 权重文件名、模型加载速度）详见
+> [docs/环境准备与下载说明.md](docs/环境准备与下载说明.md) 第九节；SD 未启动时激励卡功能提示错误，不影响其他模块。
+
+### 7. Windows 桌面端（Electron）
 
 ```bash
 cd desktop
@@ -102,7 +119,7 @@ npm run pack         # 打包 NSIS 安装包 + 绿色版（release/ 目录）
 
 后端通过 `xqfx.ollama.*` 配置接入；服务不可用时自动降级为规则化文本，功能不中断。
 
-### 7. 大模型双轨策略（本地优先 · 云端可选降级）
+### 8. 大模型双轨策略（本地优先 · 云端可选降级）
 
 系统采用「本地 Ollama 优先、外部 AI 云端兜底」双轨路由，回应当前高校对大模型数据安全与可用性的要求：
 
@@ -111,7 +128,7 @@ npm run pack         # 打包 NSIS 安装包 + 绿色版（release/ 目录）
 - **出校脱敏** `xqfx.privacy.mask-llm-prompt=true`：发送云端前对手机号、身份证自动打码（含边界防误伤，如学号/订单号不打码）；调用日志 `ai_call_log` 记录实际 provider 来源（本地/云端/规则），可审计。
 - **健康检查** `GET /ai/health` 返回 Provider 状态：`localAvailable` / `cloudConfigured` / `cloudAvailable`（**真实连通性探测 GET /models，60s TTL 缓存**）/ `cloudProbeError` / `activeProvider`（LOCAL / CLOUD / RULE_FALLBACK）/ `providerMode`。
 
-### 8. 预测模型训练数据源诊断
+### 9. 预测模型训练数据源诊断
 
 - **训练数据**：`PredictionService.buildTrainingDataset()` 用历史学期特征 + 下学期是否挂科做标签（有监督时间序列切分），LR/RF/XGB 训练与评估，冷启动由 `ConstantPredictor` 兜底。
 - **外部开源数据补充**（天池/开源数据池）：`ml/data/import_external.py` 把天池「学生成绩预测」（[数据集 179206](https://tianchi.aliyun.com/dataset/179206)）、UCI Student Performance 等 CSV 映射为训练特征（`external_features.csv` + 来源留痕 `source_info.json`），`ExternalDatasetLoader` 自动并入训练集（`term_id<0` 标识外部样本）。接入详情见 [docs/天池数据接入.md](docs/天池数据接入.md)。
@@ -176,6 +193,7 @@ npm run pack         # 打包 NSIS 安装包 + 绿色版（release/ 目录）
 | 课程空间 | 教师/学生按教学班进入课程空间：章节（CRUD + 自动编号）、资料（上传/下载/删除，本地存储）、讨论区（发帖/回复/点赞/教师置顶） |
 | 课堂签到 | 教师发起 6 位数字码签到 → 学生输码签到 → 自动写考勤（当天去重）→ 教学班通知；教师统计应到/已到/未到名单、结束签到、补签 |
 | 章节测验 | 教师按教学班组卷（单选/填空/判断/简答，可从题库选题）发布章节测验；学生在线作答，客观题自动判分（判断题对/√/T 归一化），成绩回传学情；提交按选课/班级归属校验（教学班测验仅该班学生可交） |
+| 成长激励卡 | 本地 Stable Diffusion（sd-turbo）离线 AI 绘图：按学情亮点（进步课程/平均绩点）三档风格生成激励海报，学生端生成/下载/历史相册，管理员监察中心批量生成 + 全量记录 |
 | 多端化 | Web 端移动响应式（<768px 侧栏转抽屉、卡片流）+ Windows 桌面端（Electron 加载 Web 产物，可打包安装包/绿色版）；微信小程序端规划中（uni-app） |
 
 ### 三端角色与可见范围
